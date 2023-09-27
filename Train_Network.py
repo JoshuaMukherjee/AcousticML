@@ -53,8 +53,9 @@ def do_network(net, optimiser,loss_function,loss_params, datasets,test=False,
             pressure_out = torch.abs(field)
             outputs.append(pressure_out)
                     
-            output = torch.stack(outputs,dim=1)
+            output = torch.stack(outputs,dim=1).squeeze_()
             target = torch.abs(pressures)
+
     
            
             # if supervised:
@@ -102,6 +103,7 @@ def train(net, start_epochs, epochs, train, test, optimiser,
             loss_function, loss_params, supervised, scheduler, name, 
             batch, random_stop, clip=False, clip_args={}, log_grad =False, norm_loss = False ):
     print(name, "Training....")
+    print(device)
     start_time = time.asctime()
     losses = []
     losses_test = []
