@@ -8,3 +8,12 @@ class PointNetOut():
         out = convert_to_complex(out)
         out = torch.sum(out,dim=2)
         return out
+
+class PointNetPhaseOnly():
+    #comvert to complex activations (Bx512xN) -> (Bx512)
+    def __call__(self, out):
+        
+        out = torch.sum(out,dim=2)
+        out = torch.e ** (1j*out)
+
+        return out

@@ -38,8 +38,6 @@ class PointNet(Module):
         else:
             self.output_funct = None
         
-
-        
         Group_norm= False
         if type(batch_norm) == str:
             if batch_norm == "GroupNorm":
