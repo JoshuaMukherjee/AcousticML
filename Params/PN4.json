@@ -11,7 +11,7 @@
     "test":["Test-1000-4.pth"],
     "optimiser":"NAdam",
     "optimiser-args":{"lr":1e-3},
-    "loss-function":"max_norm",
+    "loss-function":"max_loss",
     "supervised":true,
     "batch":2,
     "clip":true,
