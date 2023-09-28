@@ -2,7 +2,7 @@
     "net":"PointNet",
     "net-args":{
         "layer_sets":[[2,2,2],[2,2,2],[2,2,1024]],
-        "activation":"ReLU",
+        "activation":"SELU",
         "output_funct":"PointNetOut"
     },
     "start-epochs":0,
@@ -16,9 +16,9 @@
     "batch":32,
     "clip":true,
     "scheduler":"CyclicLR",
-    "scheduler-args":{"base_lr":1e-5,
+    "scheduler-args":{"base_lr":1e-3,
                         "max_lr":1e-2,
-                        "step_size_up":5,
+                        "step_size_up":10,
                         "cycle_momentum":false
                     },
     "clip-args":{"max_norm":1e7},

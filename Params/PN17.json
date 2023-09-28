@@ -2,7 +2,7 @@
     "net":"PointNet",
     "net-args":{
         "layer_sets":[[2,2,2],[2,2,2],[2,2,1024]],
-        "activation":"ReLU",
+        "activation":"Tanh",
         "output_funct":"PointNetOut"
     },
     "start-epochs":0,

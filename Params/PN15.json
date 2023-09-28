@@ -2,7 +2,7 @@
     "net":"PointNet",
     "net-args":{
         "layer_sets":[[2,2,2],[2,2,2],[2,2,1024]],
-        "activation":"ReLU",
+        "activation":"SELU",
         "output_funct":"PointNetOut"
     },
     "start-epochs":0,
@@ -13,7 +13,7 @@
     "optimiser-args":{"lr":1e-2},
     "loss-function":"max_loss",
     "supervised":true,
-    "batch":32,
+    "batch":64,
     "clip":true,
     "scheduler":"CyclicLR",
     "scheduler-args":{"base_lr":1e-5,
