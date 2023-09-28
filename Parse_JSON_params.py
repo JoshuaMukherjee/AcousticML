@@ -12,7 +12,7 @@ from Dataset import PointDataset
 
 
 files = [
-   "PN1"
+   "PN4"
 ]
 
 
@@ -70,20 +70,6 @@ def parse(params,name):
         log_grad = params["log-grad"]
     else:
         log_grad = False
-    
-    if "phase-reg-fun" in params:
-        phase_reg_function = getattr(Loss_Functions, params["phase-reg-fun"])
-        phase_reg_lambda = params["phase-reg-lambda"]
-    else:
-        phase_reg_function = None
-        phase_reg_lambda = 0
-
-    if "pressure-reg-fun" in params:
-        pressure_reg_function = getattr(Loss_Functions, params["pressure-reg-fun"])
-        pressure_reg_lambda = params["pressure-reg-lambda"]
-    else:
-        pressure_reg_function = None
-        pressure_reg_lambda = 0
     
     if "norm-loss" in params:
         norm_loss = True
