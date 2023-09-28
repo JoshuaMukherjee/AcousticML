@@ -44,7 +44,7 @@ class PointDataset(Dataset):
 
 if __name__ == "__main__":
     
-    length = 10000
+    length = 20000
     test_length = 1000
     N = 4
 
