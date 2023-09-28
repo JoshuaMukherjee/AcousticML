@@ -78,6 +78,7 @@ class PointNet(Module):
                     act = activation[i][j]
                     if act is not None:
                         self.layers[i].append(act().to(device))
+                
                 if batch_norm is not None:
                     if type(batch_norm) is not list:
                         if Group_norm:
