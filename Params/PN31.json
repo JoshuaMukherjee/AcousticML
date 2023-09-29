@@ -1,0 +1,26 @@
+{
+    "net":"PointNet",
+    "net-args":{
+        "layer_sets":[[2,2,2,2,2,2],[2,2,2,2],[2,2,2,2,1024]],
+        "activation":"SELU",
+        "output_funct":"PointNetOut"
+    },
+    "start-epochs":0,
+    "epochs":100,
+    "train":["Train-20000-4.pth"],
+    "test":["Test-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-3},
+    "loss-function":"max_loss",
+    "supervised":true,
+    "batch":32,
+    "clip":true,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-3,
+                        "max_lr":1e-1,
+                        "step_size_up":10,
+                        "cycle_momentum":false
+                    },
+    "clip-args":{"max_norm":1e7},
+    "log-grad":false
+}
