@@ -12,7 +12,7 @@ from Dataset import PointDataset
 
 
 files = [
-   "PN31", "PN32", "PN33", "PN34", "PN35"
+   "PN36", "PN37", "PN37", "PN39", "PN40"
 ]
 
 
