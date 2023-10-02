@@ -52,14 +52,18 @@ if "-p" in sys.argv:
         gs_pat_ps.append(gs_pat_p.squeeze_().cpu().detach().numpy())
 
     fig, axs = plt.subplots(1,P)
+    fig.tight_layout()
     for i in range(P):
         to_plot = {}
         to_plot["Model"] = press[i]
         to_plot["WGS"] = wgs_200_ps[i]
         to_plot["GS PAT"] = gs_pat_ps[i]
         axs[i].boxplot(to_plot.values())
-        axs[i].set_xticklabels(to_plot.keys())
+        axs[i].set_xticklabels(to_plot.keys(), rotation=90)
         axs[i].set_ylim(bottom=0,top=13000)
+        axs[i].set_yticklabels(range(0,13000,2000), rotation=90)
+        axs[i].set_ylabel("Pressure (Pa)")
+        
     plt.show()
 
 
