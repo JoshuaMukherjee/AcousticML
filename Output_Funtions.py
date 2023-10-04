@@ -26,12 +26,3 @@ class PointNetOutConAmp():
         out = out / torch.abs(out)
         return out
 
-class PointNetOutClipAmp():
-     def __call__(self, out):
-        out = convert_to_complex(out)
-        out = torch.sum(out,dim=2)
-        amp = torch.abs(out)
-        mask = (amp >= 1)
-        out[mask] = out[mask] / amp[mask]
-        out = out / torch.abs(out)
-        return out
