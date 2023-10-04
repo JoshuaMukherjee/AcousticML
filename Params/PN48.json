@@ -1,9 +1,9 @@
 {
     "net":"PointNet",
     "net-args":{
-        "layer_sets":[[2,2,2,2],[2,2,2,2],[2,2,2,1024]],
+        "layer_sets":[[2,2,2,2],[2,2,2,2],[2,2,2,512]],
         "activation":"SELU",
-        "output_funct":"PointNetOutClipAmp"
+        "output_funct":"PointNetPhaseOnly"
     },
     "start-epochs":0,
     "epochs":100,
