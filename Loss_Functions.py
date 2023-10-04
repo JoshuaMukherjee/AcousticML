@@ -40,14 +40,14 @@ def mean_cosine_similarity(target, output, **loss_params):
   loss = cos(target, output)
   return torch.mean(loss)
 
-def log_pressure(target, output):
+def log_pressure(output):
   return torch.mean(torch.log(output**-1))
 
 def cos_log(target,output,alpha=0.1,**cos_loss_params):
   """
   From Deep learning-based framework for fast and accurate acoustic hologram generation
   """
-  return mean_cosine_similarity(target,output,**cos_loss_params) + alpha*log_pressure(target,output)
+  return mean_cosine_similarity(target,output,**cos_loss_params) + alpha*log_pressure(output)
 
 def cos_mean(target,output,alpha=0.1,**cos_loss_params):
   return mean_cosine_similarity(target,output,**cos_loss_params) - alpha*torch.mean(target)
