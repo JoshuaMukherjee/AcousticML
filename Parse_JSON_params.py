@@ -12,7 +12,7 @@ from Dataset import PointDataset
 
 
 files = [
-   "PN44","PN45"
+   "PN46"
 ]
 
 
@@ -24,7 +24,8 @@ def parse(params,name):
     if start_epochs == 0:
         net = getattr(Networks, params["net"])(**params["net-args"]).to(device)
     else:
-        net = torch.load(name+".pth",map_location=torch.device(device))
+        start_name = params["start_model"] #Which model to start from
+        net = torch.load(start_name+".pth",map_location=torch.device(device))
 
     try:
         train_s = [torch.load("./Datasets/"+pth,map_location=torch.device(device)) for pth in params["train"] ]
