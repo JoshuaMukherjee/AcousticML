@@ -15,6 +15,7 @@ from Utilities import propagate, forward_model, device
 
 
 if "-p" in sys.argv:
+    CONST = '-con' in sys.argv
 
     
     model_name = sys.argv[1]
@@ -36,7 +37,10 @@ if "-p" in sys.argv:
     for p,a,pr in data:
     
         out = model(p)
+        if CONST:
+            out = out / torch.abs(out)
         pressure = torch.abs(propagate(out,p))
+
         wgs_p = torch.abs(pr)
 
 
@@ -92,7 +96,6 @@ if "-l" in sys.argv:
 
     plt.legend()
     plt.show()
-
 
 if "-h" in sys.argv:
     model_name = sys.argv[1]
@@ -165,3 +168,17 @@ if "-c" in sys.argv:
     plt.scatter(x,to_plot,s=sizes)
 
     plt.show()
+
+if "-t" in sys.argv:
+    model_name = sys.argv[1]
+
+    model = torch.load("Models/model_"+model_name+".pth")
+    N = 4
+    P = 1
+    dataset = PointDataset(P,N)
+    data = iter(DataLoader(dataset,1,shuffle=True))
+
+    p,a,pr = next(data)
+    out = model(p)
+
+    print(torch.abs(out))
