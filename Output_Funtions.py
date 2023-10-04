@@ -17,3 +17,11 @@ class PointNetPhaseOnly():
         out = torch.e ** (1j*out)
 
         return out
+
+class PointNetOutConAmp():
+    # Bx1024xN -> Bx512, constrain amp
+     def __call__(self, out):
+        out = convert_to_complex(out)
+        out = torch.sum(out,dim=2)
+        out = out / torch.abs(out)
+        return out
