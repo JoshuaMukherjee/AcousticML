@@ -43,12 +43,29 @@ class PointNetOutClipAmp():
 
 class PointNetOutSin():
     def __call__(self, out):
-        #B x 1024 x N -> B x N x 512 x 2  -> Bx512xN & Bx512xN -> Ae^ix -> Bx512xN (complex)
-        out = torch.permute(out,(0,2,1))
-        out = out.view((out.shape[0],out.shape[1],-1,2))
+        #B x 1024 x N ->cB x 1024-> B x 512 x 2  -> Bx512 & Bx512 -> Ae^ix -> Bx512 (complex)
+        out = torch.sum(out,dim=2)
 
-        amp = torch.sin(out[:,:,:,0])
-        phase = torch.sin(out[:,:,:,1])
+        out = out.view((out.shape[0],-1,2))
 
-        return amp * torch.e ** (1j*phase)
+        amp = torch.sin(out[:,:,0])
+        phase = torch.sin(out[:,:,1])
 
+        act = amp * torch.e ** (1j*phase)
+        # act = act.permute(0,2,1)
+        return act
+
+
+class PointNetOutSinNonPhase():
+    def __call__(self, out):
+        #B x 1024 x N ->cB x 1024-> B x 512 x 2  -> Bx512 & Bx512 -> Ae^ix -> Bx512 (complex)
+        out = torch.sum(out,dim=2)
+
+        out = out.view((out.shape[0],-1,2))
+
+        amp = torch.sin(out[:,:,0])
+        phase = out[:,:,1]
+
+        act = amp * torch.e ** (1j*phase)
+        # act = act.permute(0,2,1)
+        return act
