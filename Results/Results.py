@@ -63,6 +63,8 @@ if "-p" in sys.argv:
         axs[i].set_ylim(bottom=0,top=13000)
         axs[i].set_yticklabels(range(0,13000,2000), rotation=90)
         axs[i].set_ylabel("Pressure (Pa)")
+
+        print(press[i])
         
     plt.show()
 
