@@ -1,7 +1,7 @@
 {
     "net":"PointNet",
     "net-args":{
-        "layer_sets":[[20,20,20,20],[20,20,20,20],[20,20,20,1024]],
+        "layer_sets":[[50,50,50,50],[50,50,50,50],[50,50,50,1024]],
         "activation":"SELU",
         "output_funct":"PointNetOutSinNonPhase"
     },
