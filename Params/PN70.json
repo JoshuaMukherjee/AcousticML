@@ -7,7 +7,7 @@
     "optimiser":"NAdam",
     "optimiser-args":{"lr":1e-3},
     "loss-function":"mean_std",
-    "supervised":true,
+    "supervised":false,
     "batch":32,
     "clip":true,
     "scheduler":"CyclicLR",

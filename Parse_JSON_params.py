@@ -25,7 +25,7 @@ def parse(params,name):
         net = getattr(Networks, params["net"])(**params["net-args"]).to(device)
     else:
         start_name = params["start_model"] #Which model to start from
-        net = torch.load("./Models/"+start_name+".pth",map_location=torch.device(device))
+        net = torch.load("./Models/model_"+start_name+".pth",map_location=torch.device(device))
 
     try:
         train_s = [torch.load("./Datasets/"+pth,map_location=torch.device(device)) for pth in params["train"] ]
