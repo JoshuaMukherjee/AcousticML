@@ -10,12 +10,6 @@
     "supervised":false,
     "batch":32,
     "clip":true,
-    "scheduler":"CyclicLR",
-    "scheduler-args":{"base_lr":1e-5,
-                        "max_lr":1e-4,
-                        "step_size_up":5,
-                        "cycle_momentum":false
-                    },
     "clip-args":{"max_norm":1e7},
     "log-grad":false
 }
