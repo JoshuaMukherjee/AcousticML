@@ -57,4 +57,4 @@ def max_mean_pressure(output):
 
 def max_mean_min_pressure(output):
   # Bx4
-  return torch.mean(-1 * torch.min(output,dim=1))
+  return torch.mean(-1 * torch.min(output,dim=1).values)
