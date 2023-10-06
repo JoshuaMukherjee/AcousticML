@@ -302,7 +302,8 @@ class ResPointNet(Module):
     def __init__(self, layer_sets, input_size=3,
                 kernel=1, kernel_pad="same",padding_mode="zeros",
                 activation = None, batch_norm = None,
-                sym_function=SymMax, sym_args={}):
+                sym_function=SymMax, sym_args={},
+                output_funct=None, output_funct_args = {}):
         super(ResPointNet,self).__init__()
 
         self.sym_function = sym_function(**sym_args)
@@ -324,6 +325,11 @@ class ResPointNet(Module):
                 block = ResBlock(D,D1,D2,  kernel=kernel, kernel_pad=kernel_pad,padding_mode=padding_mode,  activation = activation, norm = batch_norm)
                 self.blocks[layer_i].append(block)
                 D = D2
+        
+        if output_funct is not None:
+            self.output_funct = getattr(Output_Funtions,output_funct)(**output_funct_args)
+        else:
+            self.output_funct = None
                 
     def forward(self,x):
         out = x
@@ -339,6 +345,9 @@ class ResPointNet(Module):
         out = torch.cat((local_features,global_features),dim=1)
         for layer in self.blocks[2]:
             out = layer(out)
+        
+        if self.output_funct is not None:
+            out = self.output_funct(out)
         
 
         return out
