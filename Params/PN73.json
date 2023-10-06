@@ -6,7 +6,7 @@
     "test":["Test-1000-4.pth"],
     "optimiser":"NAdam",
     "optimiser-args":{"lr":1e-2},
-    "loss-function":"log_pressure",
+    "loss-function":"mean_std",
     "supervised":false,
     "batch":32,
     "log-grad":false
