@@ -51,3 +51,6 @@ def cos_log(target,output,alpha=0.1,**cos_loss_params):
 
 def cos_mean(target,output,alpha=0.1,**cos_loss_params):
   return mean_cosine_similarity(target,output,**cos_loss_params) - alpha*torch.mean(target)
+
+def max_mean_pressure(output):
+  return -1 * torch.mean(output)
