@@ -54,3 +54,7 @@ def cos_mean(target,output,alpha=0.1,**cos_loss_params):
 
 def max_mean_pressure(output):
   return -1 * torch.mean(output)
+
+def max_mean_min_pressure(output):
+  # Bx4
+  return torch.mean(-1 * torch.min(output,dim=1))
