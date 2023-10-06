@@ -1,0 +1,13 @@
+{
+    "start_model":"PN67",
+    "start-epochs":256,
+    "epochs":800,
+    "train":["Train-50000-4.pth"],
+    "test":["Test-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-2},
+    "loss-function":"max_mean_min_pressure",
+    "supervised":false,
+    "batch":32,
+    "log-grad":false
+}
