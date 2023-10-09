@@ -1,10 +1,9 @@
 {
     "net":"ResPointNet",
     "net-args":{
-        "layer_sets":[[50,50,50,50,50,50,50,50],[50,50,50,50,50,50,50,50],[50,50,50,50,50,50,50,1024]],
+        "layer_sets":[[50,50,50,50,50,50],[50,50,50,50,50,50],[50,50,50,50,50,1024]],
         "activation":"SELU",
-        "output_funct":"PointNetOutSinNonPhase",
-        "batch_norm": "BatchNorm1d"
+        "output_funct":"PointNetOutSinNonPhase"
     },
     "start-epochs":0,
     "epochs":800,
@@ -17,7 +16,7 @@
     "batch":32,
     "clip":true,
     "scheduler":"CyclicLR",
-    "scheduler-args":{"base_lr":1e-4,
+    "scheduler-args":{"base_lr":1e-3,
                         "max_lr":1e-2,
                         "step_size_up":5,
                         "cycle_momentum":false
