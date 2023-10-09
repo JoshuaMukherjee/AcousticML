@@ -20,7 +20,7 @@ from Utilities import *
 
 def do_network(net, optimiser,loss_function,loss_params, datasets,test=False, 
                 supervised=True, scheduler = None, random_stop=False, clip=False,
-                clip_args={}, norm_loss = False):
+                clip_args={}, norm_loss = False, extra_points_fun=None, extra_points_args={},maximise_first_N=-1):
     #TRAINING
     running = 0
     if not test:
@@ -42,12 +42,16 @@ def do_network(net, optimiser,loss_function,loss_params, datasets,test=False,
             outputs = []
             phase_reg_val = 0
             pressure_reg_val = 0
-           
+            
+            if extra_points_fun is not None:
+                points = extra_points_fun(points,**extra_points_args)
+       
            
             activation_out = net(points)
 
             #RANDOM STOP CHECK HERE
 
+            # For sine-> Add to points, remember which to minimise & what to maximise
 
             field = propagate(activation_out,points)
             pressure_out = torch.abs(field)
@@ -62,10 +66,16 @@ def do_network(net, optimiser,loss_function,loss_params, datasets,test=False,
             #     loss = loss_function(pressure_out,torch.abs(pressures[:,end,:]),**loss_params)
             # else:
             #     loss = loss_function(pressure_out,**loss_params)
-            if supervised:
-                loss = loss_function(output,target,**loss_params) + phase_reg_val + pressure_reg_val
+            if maximise_first_N == -1:
+                if supervised:
+                    loss = loss_function(output,target,**loss_params) + phase_reg_val + pressure_reg_val
+                else:
+                    loss = loss_function(output,**loss_params) + phase_reg_val + pressure_reg_val
             else:
-                loss = loss_function(output,**loss_params) + phase_reg_val + pressure_reg_val
+                if supervised:
+                    loss = loss_function(output,target,maximise_first_N,**loss_params) + phase_reg_val + pressure_reg_val
+                else:
+                    loss = loss_function(output,maximise_first_N,**loss_params) + phase_reg_val + pressure_reg_val
     
 
             if norm_loss:
@@ -101,7 +111,8 @@ def do_network(net, optimiser,loss_function,loss_params, datasets,test=False,
 
 def train(net, start_epochs, epochs, train, test, optimiser, 
             loss_function, loss_params, supervised, scheduler, name, 
-            batch, random_stop, clip=False, clip_args={}, log_grad =False, norm_loss = False ):
+            batch, random_stop, clip=False, clip_args={}, log_grad =False, norm_loss = False,
+            extra_points_fun=None, extra_points_args={}, maximise_first_N =-1):
     print(name, "Training....")
     print(device)
     start_time = time.asctime()
@@ -115,11 +126,15 @@ def train(net, start_epochs, epochs, train, test, optimiser,
             running , grad= do_network(net, optimiser, loss_function, loss_params, train, 
                                         scheduler=scheduler, supervised=supervised, 
                                         random_stop=random_stop, clip=clip, clip_args=clip_args,
-                                        norm_loss = norm_loss )
+                                        norm_loss = norm_loss, 
+                                        extra_points_fun=extra_points_fun, extra_points_args=extra_points_args, 
+                                        maximise_first_N=maximise_first_N )
             #Test
             running_test, _ = do_network(net, optimiser, loss_function, loss_params, 
                                          test, test=True, supervised=supervised, 
-                                         norm_loss = norm_loss)
+                                         norm_loss = norm_loss, 
+                                        extra_points_fun=extra_points_fun, extra_points_args=extra_points_args, 
+                                        maximise_first_N=maximise_first_N)
             
             losses.append(running) #Store each epoch's losses 
             losses_test.append(running_test)

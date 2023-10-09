@@ -58,3 +58,18 @@ def max_mean_pressure(output):
 def max_mean_min_pressure(output):
   # Bx4
   return torch.mean(-1 * torch.min(output,dim=1).values)
+
+def max_min(output, max_fist_N, alpha=1):
+  # BxN
+  to_max = output[:,0:max_fist_N]
+  to_min = output[:,max_fist_N:]
+  # print(to_max)
+  # print(to_min)
+  loss = torch.mean(to_min) - alpha*torch.mean(to_max)
+  return loss
+
+if __name__ == "__main__":
+  output = torch.Tensor([[9000,9000,3000,4000],[1000,8000,1000,4000]])
+  print(max_min(output,2))
+
+

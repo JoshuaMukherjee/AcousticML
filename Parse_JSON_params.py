@@ -9,10 +9,11 @@ from Train_Network import train
 import Networks, Loss_Functions
 from Utilities import device
 from Dataset import PointDataset
+import ExtraPointFunctions
 
 
 files = [
-   "PN77"
+   "PN79","PN80"
 ]
 
 
@@ -77,11 +78,27 @@ def parse(params,name):
     else:
         norm_loss = False
 
+    if "extra-points-fun" in params:
+        extra_points_fun = getattr(ExtraPointFunctions,params["extra-points-fun"])
+        if "extra-points-args" in params:
+            extra_points_args = params["extra-points-args"]
+        else:
+            extra_points_args = {}
+
+        if "maximise-first-N" in params:
+            maximise_first_N = params["maximise-first-N"]
+        else:
+            maximise_first_N = -1
+    else:
+        extra_points_fun = None
+        
+
+
     
     train(net,start_epochs,epochs,train_sets,test_sets,optimiser,
         loss_function,loss_params, supervised, scheduler, 
         name, batch, rand_stop, clip, clip_params, log_grad,
-        norm_loss)
+        norm_loss, extra_points_fun, extra_points_args, maximise_first_N)
 
 if __name__ == '__main__':
     for file in files:
@@ -91,5 +108,4 @@ if __name__ == '__main__':
             parse(params,file)
         except Exception as e:
             print(traceback.format_exc())
-
 

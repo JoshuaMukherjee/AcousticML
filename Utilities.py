@@ -110,28 +110,33 @@ def get_convert_indexes():
     return indexes
 
 
+
 if __name__ == "__main__":
+
+
+
+
     '''
     trans_pos(:,2) = flipud(trans_pos(:,2));   
     trans_pos(n/2+1:end,1) = flipud(trans_pos(n/2+1:end,1));
     '''
 
-    board = transducers()
-    print(board.shape)
-    board[512//2:,0] = torch.flipud(board[512//2:,0]);
-    board[:,1] = torch.flipud(board[:,1]);
-    board[:,2] = torch.flipud(board[:,2]);
-    indexes = []
+    # board = transducers()
+    # print(board.shape)
+    # board[512//2:,0] = torch.flipud(board[512//2:,0]);
+    # board[:,1] = torch.flipud(board[:,1]);
+    # board[:,2] = torch.flipud(board[:,2]);
+    # indexes = []
 
-    for t,row in enumerate(board):
-        for b,row_b in enumerate(transducers()):
-            if torch.all(row == row_b):
-                indexes.append(b)
+    # for t,row in enumerate(board):
+    #     for b,row_b in enumerate(transducers()):
+    #         if torch.all(row == row_b):
+    #             indexes.append(b)
 
 
-    indexes = torch.as_tensor(indexes)
-    trans = transducers()
-    flipped = trans[indexes]
+    # indexes = torch.as_tensor(indexes)
+    # trans = transducers()
+    # flipped = trans[indexes]
 
 
     # for i,row in enumerate(flipped):
