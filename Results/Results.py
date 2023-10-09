@@ -12,10 +12,16 @@ sys.path.insert(1, p)
 from Solvers import wgs, gspat
 from Dataset import PointDataset
 from Utilities import propagate, forward_model, device
+from ExtraPointFunctions import add_sine_points
 
 
 if "-p" in sys.argv:
     CONST = '-con' in sys.argv
+    MIN = '-sine' in sys.argv
+    if MIN:
+        min_N = int(sys.argv[sys.argv.index("-sine")+1])
+        extra = int(sys.argv[sys.argv.index("-sine")+2])
+
 
     
     model_name = sys.argv[1]
@@ -30,20 +36,24 @@ if "-p" in sys.argv:
 
     
     press = []
+    mins =[]
     wgs_200_ps = []
     gs_pat_ps = []
 
 
     for p,a,pr in data:
-    
+        if MIN:
+            p_temp = p
+            p = add_sine_points(p,extra)
         out = model(p)
         if CONST:
             out = out / torch.abs(out)
+        
         pressure = torch.abs(propagate(out,p))
 
         wgs_p = torch.abs(pr)
 
-
+        p = p_temp
         A = forward_model(p[0,:])
         backward = torch.conj(A).T
         R = A@backward
@@ -51,7 +61,11 @@ if "-p" in sys.argv:
 
         gs_pat_p = torch.abs(pres)
 
-        press.append(pressure.cpu().detach().numpy())
+        if MIN:
+            press.append(pressure[:min_N].cpu().detach().numpy())
+            mins.append(pressure[min_N:].cpu().detach().numpy())
+        else:
+            press.append(pressure.cpu().detach().numpy())
         wgs_200_ps.append(wgs_p.squeeze_().cpu().detach().numpy())
         gs_pat_ps.append(gs_pat_p.squeeze_().cpu().detach().numpy())
 
@@ -60,6 +74,8 @@ if "-p" in sys.argv:
     for i in range(P):
         to_plot = {}
         to_plot["Model"] = press[i]
+        if MIN:
+            to_plot["Minimised points"] = mins[i]
         to_plot["WGS"] = wgs_200_ps[i]
         to_plot["GS PAT"] = gs_pat_ps[i]
         axs[i].boxplot(to_plot.values())
