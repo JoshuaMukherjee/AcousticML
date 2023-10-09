@@ -1,5 +1,5 @@
 {
-    "start_model":"PN83",
+    "start_model":"PN81",
     "start-epochs":100,
     "epochs":200,
     "train":["Train-20000-4.pth"],
