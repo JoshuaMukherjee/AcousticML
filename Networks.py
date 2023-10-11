@@ -11,6 +11,8 @@ Retrieved from http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-h
 from Symmetric_Functions import SymMax
 from Utilities import device
 
+import math
+
 import Activations
 import Output_Funtions
 
@@ -121,14 +123,12 @@ class PointNet(Module):
 
         return out
 
-
 class Identity(Module):
     def __init__(self):
         super(Identity,self).__init__()
     
     def forward(self,x):
         return x
-
 
 class MLP(Module):
     def __init__(self, layers, input_size=512,layer_args={},
@@ -230,7 +230,6 @@ class MLP(Module):
         for layer in self.layers:
             out = layer(out)
         return out
-
 
 class ResBlock(Module):
     '''
@@ -352,50 +351,119 @@ class ResPointNet(Module):
 
         return out
 
+class CNN(Module):
+    def __init__(self,layers, conv_args= {}, 
+                 channels_in = 4,
+                 activation=None,
+                 norm=None):
+        
+        super(CNN,self).__init__()
+        self.layer_list = layers
+        self.conv_args = conv_args
+        self.out_size = 0
+
+        self.channels_in = channels_in
+
+        if activation is not None:
+            self.activation = getattr(torch.nn,activation)()
+        if norm is not None:
+            self.norm = getattr(torch.nn,norm)
+       
+        self.layers = torch.nn.ModuleList()
+       
+        in_size = self.channels_in
+        N = len(self.layers)
+        for i,layer in enumerate(self.layer_list):
+            self.out_size = layer
+            self.layers.append(torch.nn.Conv2d(in_size,self.out_size,**self.conv_args).to(device))
+            if activation is not None:
+                self.layers.append(self.activation.to(device))
+            if norm is not None:
+                self.layers.append(self.norm(self.out_size).to(device))
+            in_size = self.out_size
+        
+
+    def forward(self, x):
+        out = x
+        for layer in self.layers:
+            out = layer(out)
+        return out
+    
+class F_CNN(Module):
+    def __init__(self, CNN_agrs={},T=512, N=4, num_boards=2, sym_fun = torch.max ):
+        super(F_CNN,self).__init__()
+        self.T = T
+        self.N = N #No. Points
+        self.num_boards = num_boards
+        self.cnn = CNN(**CNN_agrs)
+        self.sym_fun = sym_fun
+    
+    def forward(self, x):
+
+        # print(x.shape)
+        B = x.shape[0]
+        W = int(math.sqrt(x.shape[2] / self.num_boards))
+
+        x = torch.reshape(x,(self.N,B,self.num_boards, W, W))
+        # print(x.shape)
+        # print(x[0,0,0,0,0:6])
+        x = torch.view_as_real(x)
+        # print(x.shape)
+        x = torch.concat((x[:,:,:,:,:,0],x[:,:,:,:,:,1]),dim=2)
+        # x = torch.reshape(x, (self.N,B,2*self.num_boards, W, W))
+        out = torch.zeros((self.N,B, self.cnn.out_size, W, W)).to(device)
+        for n,point in enumerate(x):
+            p = self.cnn(point)
+            out[n,:] = p 
+        # print(out.shape)
+
+        out = self.sym_fun(out,dim=0).values
+        # print(out.shape)
+        out = torch.reshape(out, (B, -1))
+
+        out = torch.exp(1j * out)
+
+        return out.T
+
+
 
 if __name__ == "__main__":
 
-    act = "ELU"
-    bn = torch.nn.BatchNorm1d
-    # net = ResPointNet([[10,20,30,40],[50,60],[70,80]],activation=act,norm=bn)
-    m = 512
-    layers = [[64,64],[64,128],[512,256,128,m]]
-    norm = torch.nn.BatchNorm1d
-    net = ResPointNet(layers,batch_norm=norm)
-    # print(net)
+    from Utilities import forward_model, transducers
+    from Solvers import wgs
+
+    B = 2
+    C = 4
+
+    points = torch.FloatTensor(3,4).uniform_(-.06,.06).to(device)
+    A=forward_model(points, transducers()).to(device)
+    in_A = torch.unsqueeze(A,0) #add batch
+    # print(A[0,:,0:6])
 
 
+    layers = [4,10,10,10,2]
+    args = {
+        "kernel_size":3,
+        "padding":"same"
+    }
 
-    from Dataset import *
-    from torch.utils.data import DataLoader 
-    from Symmetric_Functions import SymSum
+    F_cnn_args = {
+        "layers":layers,
+        "channels_in":C,
+        "conv_args":args,
+        "activation":"ReLU",
+        "norm":"BatchNorm2d"
+    }
 
-    # m = 512
-    # layers = [[64,64],[64,128,1024],[512,256,128,128,m]]
-    # norm = torch.nn.BatchNorm1d
-    # net = PointNet(layers,batch_norm=norm)
-    print(net)
+    F_cnn = F_CNN(F_cnn_args)
+    out = F_cnn(in_A)
+    print(out.shape)
+    _, _, x = wgs(A,torch.ones(4,1).to(device)+0j,200)
+    print(x.shape)
 
-    data = Dataset(10)
-    points = DataLoader(data,2,shuffle=True)
-    points,changes,_,_ = next(iter(points))
-    print("p",points)
-    perm = permute_points(changes,[0,2,1,3],axis=3)
+    p_wgs = A@x
+    print(torch.abs(p_wgs))
 
-    for i in range(1,changes.shape[1]): #Want timestampts-1 iterations because first one is zeros
-        #itterate over timestamps
-        change = changes[:,i,:,:] #Get batch
-        out = net(change)
-        p=points[:,i,:,:]
-        # print(swap_output_to_activations(out,p))
-        print(out)
-        print(out.shape)
-
-        permed = perm[:,i,:,:]
-        perm_out = torch.sum(net(permed))
-        print(torch.all(perm_out == torch.sum(out))) #Should be True
-        # print(torch.all(permed==change)) 
-
-        rand = torch.rand_like(change)
-        rand_out = net(rand)
-        print(torch.all(rand_out == out)) #Should be False
+    p_cnn = A@out
+    print(torch.abs(p_cnn))
+    
