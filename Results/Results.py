@@ -42,6 +42,7 @@ if "-p" in sys.argv:
 
 
     for p,a,pr in data:
+
         if MIN:
             p_temp = p
             p = add_sine_points(p,extra)
@@ -52,8 +53,8 @@ if "-p" in sys.argv:
         pressure = torch.abs(propagate(out,p))
 
         wgs_p = torch.abs(pr)
-
-        p = p_temp
+        if MIN:    
+            p = p_temp
         A = forward_model(p[0,:])
         backward = torch.conj(A).T
         R = A@backward
