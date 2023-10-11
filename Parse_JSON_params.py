@@ -10,6 +10,7 @@ import Networks, Loss_Functions
 from Utilities import device
 from Dataset import PointDataset
 import ExtraPointFunctions
+import Network_Train_Functions
 
 
 files = [
@@ -91,6 +92,11 @@ def parse(params,name):
             maximise_first_N = -1
     else:
         extra_points_fun = None
+    
+    if "train-function" in params:
+        train_function = getattr(Network_Train_Functions, params["train-function"])
+    else:
+        train_function = Network_Train_Functions.default_functions[params["net"]]
         
 
 
@@ -98,7 +104,8 @@ def parse(params,name):
     train(net,start_epochs,epochs,train_sets,test_sets,optimiser,
         loss_function,loss_params, supervised, scheduler, 
         name, batch, rand_stop, clip, clip_params, log_grad,
-        norm_loss, extra_points_fun, extra_points_args, maximise_first_N)
+        norm_loss, extra_points_fun, extra_points_args, maximise_first_N,
+        train_function)
 
 if __name__ == '__main__':
     for file in files:

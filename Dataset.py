@@ -4,7 +4,6 @@ from Utilities import *
 from Solvers import wgs
 
 
-
 class PointDataset(Dataset):
     '''
     outputs points, activations, pressures
@@ -38,6 +37,9 @@ class PointDataset(Dataset):
         return self.length
 
     def __getitem__(self,i):
+         '''
+         returns points, activations, pressures
+         '''
          return self.points[i],self.activations[i],self.pressures[i]
 
 
@@ -47,15 +49,17 @@ if __name__ == "__main__":
     length = 50000
     test_length = 0
     N = 4
+    dataset_type = PointDataset
+    
 
     
     if length > 0:
             
-        train = PointDataset(length)
+        train = dataset_type(length)
         torch.save(train,"Datasets/Train-"+str(length)+"-"+str(N)+".pth")
 
     if test_length > 0:
-        test = PointDataset(test_length)
+        test = dataset_type(test_length)
         torch.save(test,"Datasets/Test-"+str(test_length)+"-"+str(N)+".pth")
     
     i = 0

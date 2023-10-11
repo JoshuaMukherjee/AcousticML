@@ -1,4 +1,5 @@
 {
+    "net":"PointNet",
     "start_model":"PN81",
     "start-epochs":100,
     "epochs":250,
