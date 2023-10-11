@@ -390,12 +390,12 @@ class CNN(Module):
         return out
     
 class F_CNN(Module):
-    def __init__(self, CNN_agrs={},T=512, N=4, num_boards=2, sym_fun = torch.max ):
+    def __init__(self, CNN_args={},T=512, N=4, num_boards=2, sym_fun = torch.max ):
         super(F_CNN,self).__init__()
         self.T = T
         self.N = N #No. Points
         self.num_boards = num_boards
-        self.cnn = CNN(**CNN_agrs)
+        self.cnn = CNN(**CNN_args)
         self.sym_fun = sym_fun
     
     def forward(self, x):
@@ -419,11 +419,13 @@ class F_CNN(Module):
 
         out = self.sym_fun(out,dim=0).values
         # print(out.shape)
-        out = torch.reshape(out, (B, -1))
+        out = torch.reshape(out, (B,-1, 1))
+        # print(out.shape)
 
         out = torch.exp(1j * out)
+        # print(out.shape)
 
-        return out.T
+        return out
 
 
 
@@ -435,9 +437,13 @@ if __name__ == "__main__":
     B = 2
     C = 4
 
-    points = torch.FloatTensor(3,4).uniform_(-.06,.06).to(device)
-    A=forward_model(points, transducers()).to(device)
-    in_A = torch.unsqueeze(A,0) #add batch
+    points1 = torch.FloatTensor(3,4).uniform_(-.06,.06).to(device)
+    A1=forward_model(points1, transducers()).to(device).unsqueeze_(0)
+    points2 = torch.FloatTensor(3,4).uniform_(-.06,.06).to(device)
+    A2=forward_model(points2, transducers()).to(device).unsqueeze_(0)
+    
+
+    in_A = torch.concat((A1,A2),0) #add batch
     # print(A[0,:,0:6])
 
 
@@ -457,13 +463,12 @@ if __name__ == "__main__":
 
     F_cnn = F_CNN(F_cnn_args)
     out = F_cnn(in_A)
-    print(out.shape)
-    _, _, x = wgs(A,torch.ones(4,1).to(device)+0j,200)
-    print(x.shape)
+    # print(out.shape)
+    # _, _, x = wgs(A1,torch.ones(4,1).to(device)+0j,200)
+    # print(x.shape)
 
-    p_wgs = A@x
-    print(torch.abs(p_wgs))
-
-    p_cnn = A@out
+    # p_wgs = A1@x
+    # print(torch.abs(p_wgs).shape)
+    p_cnn = in_A@out
     print(torch.abs(p_cnn))
     

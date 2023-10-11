@@ -8,13 +8,13 @@ from torch.utils.data import DataLoader
 from Train_Network import train
 import Networks, Loss_Functions
 from Utilities import device
-from Dataset import PointDataset
-import ExtraPointFunctions
+from Dataset import PointDataset, FDataset
+import Extra_Point_Functions
 import Network_Train_Functions
 
 
 files = [
-   "PN84"
+   "FCNN2"
 ]
 
 
@@ -34,6 +34,7 @@ def parse(params,name):
         test_s =  [torch.load("./Datasets/"+pth,map_location=torch.device(device)) for pth in params["test"]  ]
     except Exception as e:
         print("Datasets not found, please generate using ```python3 Dataset.py```")
+        print(e)
 
     batch = params["batch"]
     train_sets = [DataLoader(d,batch,shuffle=True) for d in train_s]
@@ -80,7 +81,7 @@ def parse(params,name):
         norm_loss = False
 
     if "extra-points-fun" in params:
-        extra_points_fun = getattr(ExtraPointFunctions,params["extra-points-fun"])
+        extra_points_fun = getattr(Extra_Point_Functions,params["extra-points-fun"])
         if "extra-points-args" in params:
             extra_points_args = params["extra-points-args"]
         else:
@@ -92,6 +93,9 @@ def parse(params,name):
             maximise_first_N = -1
     else:
         extra_points_fun = None
+        extra_points_args = {}
+        maximise_first_N = -1
+
     
     if "train-function" in params:
         train_function = getattr(Network_Train_Functions, params["train-function"])
