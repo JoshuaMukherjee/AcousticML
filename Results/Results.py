@@ -12,7 +12,7 @@ sys.path.insert(1, p)
 from Solvers import wgs, gspat
 from Dataset import PointDataset
 from Utilities import propagate, forward_model, device
-from ExtraPointFunctions import add_sine_points
+from Extra_Point_Functions import add_sine_points
 
 
 if "-p" in sys.argv:
