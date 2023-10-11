@@ -85,8 +85,8 @@ class FDataset(Dataset):
 
 if __name__ == "__main__":
     
-    length = 50000
-    test_length = 0
+    length = 20000
+    test_length = 1000
     N = 4
     dataset_type = FDataset
     
@@ -95,14 +95,14 @@ if __name__ == "__main__":
     if length > 0:
             
         train = dataset_type(length)
-        torch.save(train,"Datasets/Train-"+str(length)+"-"+str(N)+".pth")
+        torch.save(train,"Datasets/" +train.__class__.__name__ +"Train-"+str(length)+"-"+str(N)+".pth")
 
     if test_length > 0:
         test = dataset_type(test_length)
-        torch.save(test,"Datasets/Test-"+str(test_length)+"-"+str(N)+".pth")
+        torch.save(test,"Datasets/" +test.__class__.__name__+"Test-"+str(test_length)+"-"+str(N)+".pth")
     
     i = 0
-    for p, a, pr in train:
+    for x in train:
         print(i)
         i += 1
 
