@@ -400,26 +400,26 @@ class F_CNN(Module):
     
     def forward(self, x):
 
-        # print(x.shape)
+        # print(x.shape) #BxNx512
         B = x.shape[0]
         W = int(math.sqrt(x.shape[2] / self.num_boards))
 
-        x = torch.reshape(x,(self.N,B,self.num_boards, W, W))
+        x = torch.reshape(x,(self.N,B,self.num_boards, W, W)) #NxBx2x16x16 -> 2 complex boards per batch per point
         # print(x.shape)
         # print(x[0,0,0,0,0:6])
-        x = torch.view_as_real(x)
+        x = torch.view_as_real(x) #NxBx2x16x16x2 -> split real and complex images
         # print(x.shape)
-        x = torch.concat((x[:,:,:,:,:,0],x[:,:,:,:,:,1]),dim=2)
+        x = torch.concat((x[:,:,:,:,:,0],x[:,:,:,:,:,1]),dim=2) #NxBx4x16x16 -> combine into channels
         # x = torch.reshape(x, (self.N,B,2*self.num_boards, W, W))
         out = torch.zeros((self.N,B, self.cnn.out_size, W, W)).to(device)
         for n,point in enumerate(x):
-            p = self.cnn(point)
+            p = self.cnn(point) #NxBx2x16x16 -> Run CNN's on each point
             out[n,:] = p 
         # print(out.shape)
 
-        out = self.sym_fun(out,dim=0).values
+        out = self.sym_fun(out,dim=0).values #Bx2x16x16 -> Pool 
         # print(out.shape)
-        out = torch.reshape(out, (B,-1, 1))
+        out = torch.reshape(out, (B,-1, 1)) #Bx1x512 -> hologram
         # print(out.shape)
 
         out = torch.exp(1j * out)
