@@ -108,5 +108,7 @@ if "-t" in sys.argv:
     F,p,a,pr = next(data)
     out = model(F)
 
+    out.squeeze_()
+
     print(torch.abs(out))
     print(torch.angle(out))

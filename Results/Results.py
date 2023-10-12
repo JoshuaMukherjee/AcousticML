@@ -198,5 +198,7 @@ if "-t" in sys.argv:
     p,a,pr = next(data)
     out = model(p)
 
+    print(out.shape)
+
     print(torch.abs(out))
     print(torch.angle(out))
