@@ -16,6 +16,10 @@ import math
 import Activations
 import Output_Funtions
 
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+
 
 
 class PointNet(Module):
@@ -408,6 +412,33 @@ class F_CNN(Module):
         # print(x.shape)
         # print(x[0,0,0,0,0:6])
         x = torch.view_as_real(x) #NxBx2x16x16x2 -> split real and complex images
+        ''' Plot boards
+        img1Re = x[0,0,0,:,:,0]
+        img2Re = x[0,0,1,:,:,0]
+        img1Im = x[0,0,0,:,:,1]
+        img2Im = x[0,0,1,:,:,1]
+
+        plt.subplot(2,2,1)
+        plt.imshow(img1Re)
+        plt.title("Board 1 Re")
+
+        plt.subplot(2,2,2)
+        plt.imshow(img2Re)
+        plt.title("Board 2 Re")
+
+        plt.subplot(2,2,3)
+        plt.imshow(img1Im)
+        plt.title("Board 1 Im")
+
+        plt.subplot(2,2,4)
+        plt.imshow(img2Im)
+        plt.title("Board 2 Im")
+
+        plt.show()
+
+        input()
+        '''
+
         # print(x.shape)
         x = torch.concat((x[:,:,:,:,:,0],x[:,:,:,:,:,1]),dim=2) #NxBx4x16x16 -> combine into channels
         # x = torch.reshape(x, (self.N,B,2*self.num_boards, W, W))
