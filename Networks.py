@@ -369,7 +369,11 @@ class CNN(Module):
         self.channels_in = channels_in
 
         if activation is not None:
-            self.activation = getattr(torch.nn,activation)()
+            try:
+                activation = getattr(torch.nn,activation) 
+            except AttributeError:
+                activation = getattr(Activations,activation) 
+    
         if norm is not None:
             self.norm = getattr(torch.nn,norm)
        
