@@ -13,7 +13,7 @@
         }
     },
     "start-epochs":0,
-    "epochs":20,
+    "epochs":100,
     "train":["FDatasetTrain-20000-4.pth"],
     "test":["FDatasetTest-1000-4.pth"],
     "optimiser":"NAdam",
