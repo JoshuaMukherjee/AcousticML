@@ -80,7 +80,7 @@ if "-p" in sys.argv:
     fig.tight_layout()
     for i in range(P):
         to_plot = {}
-        
+
         to_plot["Model"] = press[i]
         to_plot["WGS"] = wgs_200_ps[i]
         to_plot["GS PAT"] = gs_pat_ps[i]
@@ -94,3 +94,19 @@ if "-p" in sys.argv:
         print(press[i])
         
     plt.show()
+
+
+if "-t" in sys.argv:
+    model_name = sys.argv[1]
+
+    model = torch.load("Models/model_"+model_name+".pth")
+    N = 4
+    P = 1
+    dataset = FDataset(P,N)
+    data = iter(DataLoader(dataset,1,shuffle=True))
+
+    F,p,a,pr = next(data)
+    out = model(F)
+
+    print(torch.abs(out))
+    print(torch.angle(out))
