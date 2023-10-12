@@ -85,8 +85,8 @@ class FDataset(Dataset):
 
 if __name__ == "__main__":
     
-    length = 20000
-    test_length = 1000
+    length = 4
+    test_length = 2
     N = 4
     dataset_type = FDataset
     
