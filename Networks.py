@@ -370,9 +370,9 @@ class CNN(Module):
 
         if activation is not None:
             try:
-                activation = getattr(torch.nn,activation) 
+                self.activation = getattr(torch.nn,activation)()
             except AttributeError:
-                activation = getattr(Activations,activation) 
+                self.activation = getattr(Activations,activation)()
     
         if norm is not None:
             self.norm = getattr(torch.nn,norm)
