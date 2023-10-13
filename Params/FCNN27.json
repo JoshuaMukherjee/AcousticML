@@ -1,0 +1,19 @@
+{
+    "net":"F_CNN",
+    "start_model":"FCNN23",
+    "start-epochs":50,
+    "epochs":50,
+    "train":["FDatasetTrain-20000-4.pth"],
+    "test":["FDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-2},
+    "loss-function":"max_mean_pressure",
+    "supervised":false,
+    "batch":2,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-3,
+                        "max_lr":1e-2,
+                        "step_size_up":10,
+                        "cycle_momentum":false
+                    }
+}
