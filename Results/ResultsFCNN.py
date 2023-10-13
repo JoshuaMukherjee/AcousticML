@@ -59,6 +59,7 @@ if "-p" in sys.argv:
     P = 5
     if "-overfit" not in sys.argv:
         dataset = FDataset(P,N)
+        print("Generated data...")
         
     else:
         dataset = torch.load("Datasets\FDataset"+norm+"Train-4-4.pth")
@@ -127,3 +128,27 @@ if "-t" in sys.argv:
 
     print(torch.abs(out))
     print(torch.angle(out))
+
+if "-h" in sys.argv:
+    model_name = sys.argv[1]
+
+    model = torch.load("Models/model_"+model_name+".pth")
+
+    P = 100
+    N = 4
+    dataset = FDataset(P,N)
+    data = iter(DataLoader(dataset,1,shuffle=True))
+    pressure_means = []
+    pressure_means_wgs = []
+    for F,p,a,pr in data:
+        out = model(F)
+        out = propagate(out,p)
+        presssure = torch.abs(out)
+        pressure_means.append(torch.mean(presssure).cpu().detach().numpy())
+        pressure_means_wgs.append(torch.mean(torch.abs(pr)).cpu().detach().numpy())
+    
+    
+    plt.hist(pressure_means, label="Model", histtype=u'step')
+    plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
+    plt.legend()
+    plt.show()
