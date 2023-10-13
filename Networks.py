@@ -401,12 +401,13 @@ class CNN(Module):
         return out
     
 class F_CNN(Module):
-    def __init__(self, CNN_args={},T=512, N=4, num_boards=2, sym_fun = torch.max, cnn=CNN ):
+    def __init__(self, CNN_args={},T=512, N=4, num_boards=2, sym_fun = torch.max, cnn="CNN" ):
         super(F_CNN,self).__init__()
         self.T = T
         self.N = N #No. Points
         self.num_boards = num_boards
-        self.cnn = cnn(**CNN_args)
+        cnn_class = globals()[cnn]
+        self.cnn = cnn_class(**CNN_args)
         self.sym_fun = sym_fun
     
     def forward(self, x):
