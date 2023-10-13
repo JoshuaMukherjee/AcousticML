@@ -450,7 +450,7 @@ class F_CNN(Module):
         # print(x.shape)
         x = torch.concat((x[:,:,:,:,:,0],x[:,:,:,:,:,1]),dim=2) #NxBx4x16x16 -> combine into channels
         # x = torch.reshape(x, (self.N,B,2*self.num_boards, W, W))
-        out = torch.zeros((self.N,B, self.cnn.out_size, W, W)).to(device)
+        out = torch.zeros((self.N,B, 2, W, W)).to(device)
         for n,point in enumerate(x):
             p = self.cnn(point) #NxBx2x16x16 -> Run CNN's on each point
             out[n,:] = p 
