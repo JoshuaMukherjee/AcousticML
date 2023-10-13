@@ -10,14 +10,25 @@ p = os.path.abspath('.')
 sys.path.insert(1, p)
 
 from Solvers import wgs, gspat
-from Dataset import PointDataset, FDataset
+from Dataset import PointDataset, FDataset, FDatasetNorm
 from Utilities import propagate, forward_model, device
 
+if "-latest" in sys.argv:
+    latest = "_latest"
+    print(latest)
+else:
+    latest = ""
+
+if "-normD" in sys.argv:
+    norm = "Norm"
+    print(norm)
+else:
+    latest = ""
 
 if "-l" in sys.argv:
     model_name = sys.argv[1]
 
-    model = torch.load("Models/model_"+model_name+".pth")
+    model = torch.load("Models/model_"+model_name+latest+".pth")
 
     loss = pickle.load(open("Losses/loss_"+model_name+".pth","rb"))
     train,test = loss
@@ -42,14 +53,18 @@ if "-p" in sys.argv:
     
     model_name = sys.argv[1]
 
-    model = torch.load("Models/model_"+model_name+".pth")
+    model = torch.load("Models/model_"+model_name+latest+".pth")
 
     N = 4
     P = 5
-    dataset = FDataset(P,N)
-    data = iter(DataLoader(dataset,1,shuffle=True))
+    if "-overfit" not in sys.argv:
+        dataset = FDataset(P,N)
+        
+    else:
+        dataset = torch.load("Datasets\FDataset"+norm+"Train-4-4.pth")
+        P = len(dataset)
 
-    
+    data = iter(DataLoader(dataset,1,shuffle=True))
     press = []
     mins =[]
     wgs_200_ps = []

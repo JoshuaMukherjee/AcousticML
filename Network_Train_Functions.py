@@ -159,9 +159,99 @@ def train_FCNN(net, params):
     return running, {}
 
 
+def train_FCNN_hologram(net, params):
 
+    optimiser = params["optimiser"]
+    loss_function = params["loss_function"]
+    loss_params = params["loss_params"]
+    datasets = params["datasets"]
+    test= params["test"]
+    supervised= params["supervised"]
+    scheduler = params["scheduler"]
+
+    running = 0
+    if not test:
+        net.train()
+    else:
+        net.eval()
+
+    for dataset in datasets:
+        for F, points, activations, pressures in iter(dataset):
+            if not test:
+                optimiser.zero_grad()            
             
-          
+            
+            activation_out = torch.angle(net(F)).squeeze_()
+
+            target = torch.angle(activations)
+
+
+            if supervised:
+                loss = loss_function(activation_out,target,**loss_params)
+            else:
+                loss = loss_function(activation_out,**loss_params) 
+            
+            running += loss.item()
+            if not test:
+                loss.backward()
+                optimiser.step()
+
+    if not test: #schedule LR on epochs
+        if scheduler is not None:
+            if type(scheduler) == torch.optim.lr_scheduler.ReduceLROnPlateau:
+                scheduler.step(running)
+            else:
+                scheduler.step()
+    
+    return running, {}
+            
+def train_FCNN_Slow(net, params):
+
+    optimiser = params["optimiser"]
+    loss_function = params["loss_function"]
+    loss_params = params["loss_params"]
+    datasets = params["datasets"]
+    test= params["test"]
+    supervised= params["supervised"]
+    scheduler = params["scheduler"]
+
+    running = 0
+    if not test:
+        net.train()
+    else:
+        net.eval()
+
+    for dataset in datasets:
+        for F, points, activations, pressures in iter(dataset):
+            if not test:
+                optimiser.zero_grad()            
+            
+            
+            activation_out = net(F) 
+
+            field = torch.abs(propagate(activation_out,points)).squeeze_()
+
+            target = torch.abs(pressures)
+
+
+            if supervised:
+                loss = loss_function(field,target,**loss_params)
+            else:
+                loss = loss_function(field,**loss_params) 
+            
+            running += loss.item()
+            if not test:
+                loss.backward()
+                optimiser.step()
+
+    if not test: #schedule LR on epochs
+        if scheduler is not None:
+            if type(scheduler) == torch.optim.lr_scheduler.ReduceLROnPlateau:
+                scheduler.step(running)
+            else:
+                scheduler.step()
+    
+    return running, {}         
         
 
 

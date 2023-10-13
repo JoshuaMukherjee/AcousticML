@@ -1,0 +1,31 @@
+{
+    "net":"F_CNN",
+    "net-args":{
+        "CNN_args":{
+            "layers":[32,256,256,256,256,64,32,2],
+            "channels_in":4,
+            "conv_args":{
+                "kernel_size":3,
+                "padding":"same"
+            },
+            "activation":"SineActivation",
+            "norm":"BatchNorm2d"
+        }
+    },
+    "train-function":"train_FCNN_hologram",
+    "start-epochs":0,
+    "epochs":400,
+    "train":["FDatasetTrain-4-4.pth"],
+    "test":["FDatasetTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-3},
+    "loss-function":"mean_cosine_similarity",
+    "supervised":true,
+    "batch":32,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-3,
+                        "max_lr":1e-2,
+                        "step_size_up":10,
+                        "cycle_momentum":false
+                    }
+}

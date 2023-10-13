@@ -1,0 +1,20 @@
+{
+    "net":"F_CNN",
+    "start_model":"FCNN17",
+    "train-function":"train_FCNN_Slow",
+    "start-epochs":2000,
+    "epochs":2000,
+    "train":["FDatasetNormTrain-4-4.pth"],
+    "test":["FDatasetNormTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-8},
+    "loss-function":"max_loss",
+    "supervised":true,
+    "batch":2,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-8,
+                        "max_lr":1e-7,
+                        "step_size_up":10,
+                        "cycle_momentum":false
+                    }
+}

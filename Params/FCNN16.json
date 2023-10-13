@@ -1,0 +1,25 @@
+{
+    "net":"F_CNN",
+    "net-args":{
+        "CNN_args":{
+            "layers":[32,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,128,64,32,2],
+            "channels_in":4,
+            "conv_args":{
+                "kernel_size":3,
+                "padding":"same"
+            },
+            "activation":"ReLU",
+            "norm":"BatchNorm2d"
+        }
+    },
+    "train-function":"train_FCNN_Slow",
+    "start-epochs":0,
+    "epochs":2000,
+    "train":["FDatasetNormTrain-4-4.pth"],
+    "test":["FDatasetNormTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-2},
+    "loss-function":"mse_loss",
+    "supervised":true,
+    "batch":2
+}
