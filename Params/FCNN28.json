@@ -15,9 +15,9 @@
     "optimiser-args":{"lr":1e-2},
     "loss-function":"mse_loss",
     "supervised":true,
-    "batch":1,
+    "batch":2,
     "scheduler":"CyclicLR",
-    "scheduler-args":{"base_lr":1e-3,
+    "scheduler-args":{"base_lr":1e-4,
                         "max_lr":1e-2,
                         "step_size_up":10,
                         "cycle_momentum":false
