@@ -19,7 +19,7 @@ if "-latest" in sys.argv:
 else:
     latest = ""
 
-if "-normD" in sys.argv:
+if "-normD" in sys.argv: #Use a normalised dataset
     norm = "Norm"
     print(norm)
 else:
