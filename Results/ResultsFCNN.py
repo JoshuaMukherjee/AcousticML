@@ -32,7 +32,7 @@ if "-l" in sys.argv:
 
     loss = pickle.load(open("Losses/loss_"+model_name+".pth","rb"))
     train,test = loss
-    if '-norm' in sys.argv:
+    if "-abs" not in sys.argv:
         train = [t/20000 for t in train]
         test = [t/1000 for t in test]
     print(len(train))
