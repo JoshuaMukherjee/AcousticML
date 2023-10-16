@@ -192,7 +192,7 @@ def train_FCNN_hologram(net, params):
                 loss = loss_function(activation_out,**loss_params) 
             
             running += loss.item()
-            if not test:
+            if not test: #Learn on each batch
                 loss.backward()
                 optimiser.step()
 
