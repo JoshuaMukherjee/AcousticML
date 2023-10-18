@@ -68,6 +68,24 @@ def max_min(output, max_fist_N, alpha=1):
   loss = torch.mean(to_min) - alpha*torch.mean(to_max)
   return loss
 
+def holo_cos_pressure_max(activation_out,target,field,target_pressure,alpha=1,**loss_params):
+  holo = mean_cosine_similarity(target,activation_out)
+  press = mse_loss(target_pressure,field)
+  # print(holo,alpha*press)
+
+  return holo + alpha*press
+
+def AcousNetLoss(output, target, **params):
+  l = 1 - torch.cos(2*torch.pi * (output - target))
+  loss  = torch.sum(l)
+  return loss
+
+def cos_cos_loss(activation_out,target,field,target_pressure,alpha=1,**loss_params):
+  holo = cosine_accuracy(target, activation_out)
+  press = cosine_accuracy(field,target_pressure)
+
+  return torch.sum(holo+alpha*press)
+
 if __name__ == "__main__":
   output = torch.Tensor([[9000,9000,3000,4000],[1000,8000,1000,4000]])
   print(max_min(output,2))

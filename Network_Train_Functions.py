@@ -253,7 +253,53 @@ def train_FCNN_Slow(net, params):
     
     return running, {}         
         
+def train_FCNN_hologram_pressure(net, params):
 
+    optimiser = params["optimiser"]
+    loss_function = params["loss_function"]
+    loss_params = params["loss_params"]
+    datasets = params["datasets"]
+    test= params["test"]
+    supervised= params["supervised"]
+    scheduler = params["scheduler"]
+
+    running = 0
+    if not test:
+        net.train()
+    else:
+        net.eval()
+
+    for dataset in datasets:
+        for F, points, activations, pressures in iter(dataset):
+            if not test:
+                optimiser.zero_grad()            
+            
+            act = net(F)
+            activation_out = torch.angle(act).squeeze_()
+            field = torch.abs(propagate(act,points)).squeeze_()
+            target_pressure = torch.abs(pressures)
+
+            target = torch.angle(activations)
+
+
+            if supervised:
+                loss = loss_function(activation_out,target,field,target_pressure,**loss_params)
+            else:
+                loss = loss_function(activation_out,target,field,**loss_params) 
+            
+            running += loss.item()
+            if not test: #Learn on each batch
+                loss.backward()
+                optimiser.step()
+
+    if not test: #schedule LR on epochs
+        if scheduler is not None:
+            if type(scheduler) == torch.optim.lr_scheduler.ReduceLROnPlateau:
+                scheduler.step(running)
+            else:
+                scheduler.step()
+    
+    return running, {}
 
 
 default_functions = {
