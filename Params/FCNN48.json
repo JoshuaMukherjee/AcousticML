@@ -17,17 +17,14 @@
     "train":["FDatasetTrain-20000-4.pth"],
     "test":["FDatasetTest-1000-4.pth"],
     "optimiser":"NAdam",
-    "optimiser-args":{"lr":1e-2},
-    "loss-function":"cos_cos_loss",
-    "loss-params":{
-        "alpha":10
-    },
+    "optimiser-args":{"lr":1e-3},
+    "loss-function":"AcousNetLoss",
     "supervised":true,
     "batch":2,
     "scheduler":"CyclicLR",
-    "train-function":"train_FCNN_hologram_pressure",
-    "scheduler-args":{"base_lr":1e-3,
-                        "max_lr":1e-2,
+    "train-function":"train_FCNN_hologram",
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":1e-3,
                         "step_size_up":10,
                         "cycle_momentum":false
                     }

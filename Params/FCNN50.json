@@ -18,9 +18,10 @@
     "test":["FDatasetTest-1000-4.pth"],
     "optimiser":"NAdam",
     "optimiser-args":{"lr":1e-2},
-    "loss-function":"cos_cos_loss",
+    "loss-function":"cos_cos_max_pressure",
     "loss-params":{
-        "alpha":10
+        "alpha":10,
+        "beta":0.01
     },
     "supervised":true,
     "batch":2,
