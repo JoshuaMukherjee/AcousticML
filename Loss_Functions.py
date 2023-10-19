@@ -105,7 +105,7 @@ def cos_cos_log_pressure(activation_out,target,field,target_pressure,alpha=1,bet
     # print(beta, max_p)
     # print(holo,alpha*press, beta*max_p)
 
-    return torch.sum(holo+alpha*press-beta*max_p)
+    return torch.sum(holo+alpha*press+beta*max_p)
 
 
 if __name__ == "__main__":
