@@ -107,6 +107,16 @@ def cos_cos_log_pressure(activation_out,target,field,target_pressure,alpha=1,bet
 
     return torch.sum(holo+alpha*press+beta*max_p)
 
+def cos_cos_mean_pressure(activation_out,target,field,target_pressure,alpha=1,beta=1,**loss_params):
+    holo = cosine_accuracy(target, activation_out)
+    press = cosine_accuracy(field,target_pressure)
+    max_p = max_mean_pressure(field)
+    # print(field)
+    # print(beta, max_p)
+    # print(holo,alpha*press, beta*max_p)
+
+    return torch.sum(holo+alpha*press+beta*max_p)
+
 
 if __name__ == "__main__":
   output = torch.Tensor([[9000,9000,3000,4000],[1000,8000,1000,4000]])
