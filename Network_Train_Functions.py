@@ -327,7 +327,7 @@ def train_naive(net, params):
             act_in = torch.reshape(naive_act,(naive_act.shape[0],2,16,16))
             act_phases = torch.angle(act_in)
             activation_out_img = net(act_phases) 
-            activation_out = torch.reshape(activation_out_img,(naive_act.shape[0],512)) + 1j
+            activation_out = torch.e** 1j*(torch.reshape(activation_out_img,(naive_act.shape[0],512)))
       
             field = torch.abs(propagate(activation_out, points))
             target = torch.abs(pressures)
