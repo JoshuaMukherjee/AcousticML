@@ -78,7 +78,6 @@ def naive_solver(points,transd=transducers()):
     activation = activation.to(device)
     forward = forward_model(points,transd)
     back = torch.conj(forward).T
-    print(back.shape, activation.shape)
     trans = back@activation
     trans_phase=  trans / torch.abs(trans)
     out = forward@trans_phase
