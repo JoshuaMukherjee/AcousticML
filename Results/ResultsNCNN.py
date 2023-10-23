@@ -123,3 +123,57 @@ if "-p" in sys.argv:
         print(press[i])
         
     plt.show()
+
+
+if "-t" in sys.argv:
+    model_name = sys.argv[1]
+
+    model = torch.load("Models/model_"+model_name+".pth")
+    N = 4
+    P = 1
+    dataset = NaiveDataset(P,N)
+    data = iter(DataLoader(dataset,1,shuffle=True))
+
+    p,a,pr,naive = next(data)
+    out = do_NCNN(model,p)
+
+    out.squeeze_()
+
+    print(torch.abs(out))
+    print(torch.angle(out))
+
+if "-h" in sys.argv:
+    model_name = sys.argv[1]
+
+    model = torch.load("Models/model_"+model_name+".pth")
+
+    P = 100
+    N = 4
+    dataset = NaiveDataset(P,N)
+    data = iter(DataLoader(dataset,1,shuffle=True))
+    pressure_means = []
+    pressure_means_wgs = []
+    pressure_means_naive = []
+    
+    for p,a,pr,naive in data:
+        out = do_NCNN(model,p)
+        out = propagate(out,p)
+        # presssure = torch.abs(out)
+        
+        for pres in torch.abs(out):
+            pressure_means.append(pres.cpu().detach().numpy())
+        
+
+        for presWGS in torch.abs(pr).squeeze_():
+            pressure_means_wgs.append(presWGS.cpu().detach().numpy())
+
+        naive_p,_ = naive_solver_batch(p)
+        for presN in torch.abs(naive_p).squeeze_():
+            pressure_means_naive.append(presN.cpu().detach().numpy())
+    
+    
+    plt.hist(pressure_means, label="Model", histtype=u'step')
+    plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
+    plt.hist(pressure_means_naive,label="Naive", histtype=u'step')
+    plt.legend()
+    plt.show()
