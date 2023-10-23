@@ -38,7 +38,7 @@ def forward_model(points, transducers = transducers()):
     directivity=1/2-bessel_arg**2/16+bessel_arg**4/384
     phase=torch.exp(1j*k*distance)
     trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
-    return trans_matrix
+    return trans_matrix.to(device)
 
 
 def propagate(activations, points):

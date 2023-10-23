@@ -43,8 +43,10 @@ def gspat(R,forward, backward, target, iterations):
 
 def naive(points):
     activation = torch.ones(points.shape[1]) +0j
-    forward = forward_model(points.T,transducers())
+    activation = activation.to(device)
+    forward = forward_model(points.T,transducers()).to(device)
     back = torch.conj(forward).T
+    # print(back.device, activation.device)
     trans = back@activation
     trans_phase=  trans / torch.abs(trans)
     out = forward@trans_phase
@@ -53,6 +55,7 @@ def naive(points):
 
 def naive_solver(points,transd=transducers()):
     activation = torch.ones(points.shape[1]) +0j
+    activation = activation.to(device)
     forward = forward_model(points,transd)
     back = torch.conj(forward).T
     trans = back@activation
