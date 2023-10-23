@@ -1,0 +1,28 @@
+{
+    "net":"CNN",
+    "net-args":{
+        "layers":[32,512,128,64,2],
+        "channels_in":2,
+        "conv_args":{
+            "kernel_size":3,
+            "padding":"same"
+        },
+        "activation":"ReLU",
+        "norm":"BatchNorm2d"
+    },
+    "start-epochs":0,
+    "epochs":20,
+    "train":["NaiveDatasetTrain-20000-4.pth"],
+    "test":["NaiveDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-3},
+    "loss-function":"mean_std",
+    "supervised":false,
+    "batch":32,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":1e-2,
+                        "step_size_up":5,
+                        "cycle_momentum":false
+                    }
+}
