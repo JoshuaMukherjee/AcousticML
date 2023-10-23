@@ -136,7 +136,7 @@ def do_NCNN(net, points):
     act_phases = torch.angle(act_in)
     activation_out_img = net(act_phases) 
     # activation_out = torch.reshape(activation_out_img,(naive_act.shape[0],512)) + 1j
-    activation_out = torch.e** 1j*(torch.reshape(activation_out_img,(naive_act.shape[0],512)))
+    activation_out = torch.e** (1j*(torch.reshape(activation_out_img,(naive_act.shape[0],512))))
 
 
     return activation_out
