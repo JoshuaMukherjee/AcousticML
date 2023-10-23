@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 p = os.path.abspath('.')
 sys.path.insert(1, p)
 
-from Solvers import wgs, gspat
+from Solvers import wgs, gspat,naive_solver, naive_solver_batch
 from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset
 from Utilities import propagate, forward_model, device, do_NCNN
 
@@ -53,6 +53,7 @@ if "-l" in sys.argv:
     plt.legend()
     plt.show()
 
+
 if "-p" in sys.argv:
     
     model_name = sys.argv[1]
@@ -74,6 +75,7 @@ if "-p" in sys.argv:
     mins =[]
     wgs_200_ps = []
     gs_pat_ps = []
+    naive_ps = []
 
 
     for p,a,pr,naive in data:
@@ -91,10 +93,16 @@ if "-p" in sys.argv:
         _,pres = gspat(R,A,backward,torch.ones(N,1).to(device)+0j, 200)
 
         gs_pat_p = torch.abs(pres)
+    
+        naive_p, naive_out = naive_solver_batch(p)
+        print(torch.abs(naive_p))
+       
+
 
         press.append(pressure.cpu().detach().numpy())
         wgs_200_ps.append(wgs_p.squeeze_().cpu().detach().numpy())
         gs_pat_ps.append(gs_pat_p.squeeze_().cpu().detach().numpy())
+        naive_ps.append(torch.abs(naive_p).squeeze_().cpu().detach().numpy())
 
     fig, axs = plt.subplots(1,P)
     fig.tight_layout()
@@ -104,6 +112,7 @@ if "-p" in sys.argv:
         to_plot["Model"] = press[i]
         to_plot["WGS"] = wgs_200_ps[i]
         to_plot["GS PAT"] = gs_pat_ps[i]
+        to_plot["Naive"] = naive_ps[i]
 
         axs[i].boxplot(to_plot.values())
         axs[i].set_xticklabels(to_plot.keys(), rotation=90)
