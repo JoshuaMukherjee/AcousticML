@@ -51,6 +51,16 @@ def naive(points):
     pressure = torch.abs(out)
     return out, pressure
 
+def naive_solver(points,transd=transducers()):
+    activation = torch.ones(points.shape[1]) +0j
+    forward = forward_model(points,transd)
+    back = torch.conj(forward).T
+    trans = back@activation
+    trans_phase=  trans / torch.abs(trans)
+    out = forward@trans_phase
+    return out, trans_phase
+
+
 def ph_thresh(z_last,z,threshold):
 
     pi = torch.pi
