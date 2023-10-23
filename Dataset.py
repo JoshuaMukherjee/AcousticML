@@ -166,8 +166,8 @@ class NaiveDataset(Dataset):
 
 if __name__ == "__main__":
     
-    length = 20000
-    test_length = 1000
+    length = 5
+    test_length = 3
     N = 4
     dataset_type = NaiveDataset
     

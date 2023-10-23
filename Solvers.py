@@ -53,14 +53,37 @@ def naive(points):
     pressure = torch.abs(out)
     return out, pressure
 
+def naive_solver_batch(points,transd=transducers()):
+    outs = []
+    trans_phases = []
+    for p in points:
+        activation = torch.ones(points.shape[1]) +0j
+        activation = activation.to(device)
+        forward = forward_model(points.T,transd)
+        back = torch.conj(forward).T
+        trans = back@activation
+        trans_phase=  trans / torch.abs(trans)
+        out = forward@trans_phase
+
+        outs.append(out)
+        trans_phases.append(trans_phase)
+    
+    out = torch.stack(outs)
+    trans_phase = torch.stack(trans_phases)
+    return out, trans_phase
+
 def naive_solver(points,transd=transducers()):
+
     activation = torch.ones(points.shape[1]) +0j
     activation = activation.to(device)
     forward = forward_model(points,transd)
     back = torch.conj(forward).T
+    print(back.shape, activation.shape)
     trans = back@activation
     trans_phase=  trans / torch.abs(trans)
     out = forward@trans_phase
+
+
     return out, trans_phase
 
 

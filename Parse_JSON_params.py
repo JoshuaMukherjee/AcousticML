@@ -8,13 +8,13 @@ from torch.utils.data import DataLoader
 from Train_Network import train
 import Networks, Loss_Functions
 from Utilities import device
-from Dataset import PointDataset, FDataset, FDatasetNorm
+from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset
 import Extra_Point_Functions
 import Network_Train_Functions
 
 
 files = [
-   "FCNN60"
+   "NCNN1"
 ]
 
 
