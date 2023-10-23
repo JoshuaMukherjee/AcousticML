@@ -23,7 +23,7 @@ if "-normD" in sys.argv: #Use a normalised dataset
     norm = "Norm"
     print(norm)
 else:
-    latest = ""
+    norm = ""
 
 if "-l" in sys.argv:
     model_name = sys.argv[1]
@@ -141,17 +141,36 @@ if "-h" in sys.argv:
     N = 4
     dataset = FDataset(P,N)
     data = iter(DataLoader(dataset,1,shuffle=True))
-    pressure_means = []
-    pressure_means_wgs = []
-    for F,p,a,pr in data:
-        out = model(F)
-        out = propagate(out,p)
-        presssure = torch.abs(out)
-        pressure_means.append(torch.mean(presssure).cpu().detach().numpy())
-        pressure_means_wgs.append(torch.mean(torch.abs(pr)).cpu().detach().numpy())
-    
-    
-    plt.hist(pressure_means, label="Model", histtype=u'step')
-    plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
-    plt.legend()
-    plt.show()
+    if "-mean" in sys.argv:
+        pressure_means = []
+        pressure_means_wgs = []
+        for F,p,a,pr in data:
+            out = model(F)
+            out = propagate(out,p)
+            presssure = torch.abs(out)
+            pressure_means.append(torch.mean(presssure).cpu().detach().numpy())
+            pressure_means_wgs.append(torch.mean(torch.abs(pr)).cpu().detach().numpy())
+        
+        
+        plt.hist(pressure_means, label="Model", histtype=u'step')
+        plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
+        plt.legend()
+        plt.show()
+    else:
+        pressure_out = []
+        pressure_wgs= []
+        for F,p,a,pr in data:
+            out = model(F)
+            out = propagate(out,p)
+            presssure = torch.abs(out)
+            for pres in presssure:
+                pressure_out.append(pres.cpu().detach().numpy())
+            
+            pressure = torch.abs(pr)
+            for pres in pressure.squeeze_():
+                pressure_wgs.append(pres.cpu().detach().numpy())
+            
+        plt.hist(pressure_out, label="Model", histtype=u'step')
+        plt.hist(pressure_wgs,label="WGS", histtype=u'step')
+        plt.legend()
+        plt.show()
