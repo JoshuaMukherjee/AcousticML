@@ -1,0 +1,19 @@
+{
+    "net":"CNN",
+    "start_model":"NCNN42",
+    "start-epochs":100,
+    "epochs":100,
+    "train":["NaiveDatasetTrain-100000-4.pth"],
+    "test":["NaiveDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-3},
+    "loss-function":"mean_std",
+    "supervised":true,
+    "batch":32,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":1e-3,
+                        "step_size_up":5,
+                        "cycle_momentum":false
+                    }
+}
