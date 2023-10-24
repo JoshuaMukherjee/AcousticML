@@ -174,7 +174,10 @@ if "-h" in sys.argv:
         naive_p,_ = naive_solver_batch(p)
         for presN in torch.abs(naive_p).squeeze_():
             pressure_means_naive.append(presN.cpu().detach().numpy())
-    
+
+    print(len(pressure_means))
+    print(len(pressure_means_wgs))
+    print(len(pressure_means_naive))
     
     plt.hist(pressure_means, label="Model", histtype=u'step')
     plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
