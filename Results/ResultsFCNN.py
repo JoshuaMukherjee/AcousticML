@@ -162,6 +162,7 @@ if "-h" in sys.argv:
         for F,p,a,pr in data:
             out = model(F)
             out = propagate(out,p)
+           
             presssure = torch.abs(out)
             for pres in presssure:
                 pressure_out.append(pres.cpu().detach().numpy())
