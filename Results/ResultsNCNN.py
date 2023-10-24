@@ -27,6 +27,10 @@ else:
 
 
 if "-l" in sys.argv:
+
+    TRAINSIZE = 100000
+    TESTSIZE=1000
+
     model_name = sys.argv[1]
 
     model = torch.load("Models/model_"+model_name+latest+".pth")
@@ -34,7 +38,7 @@ if "-l" in sys.argv:
     loss = pickle.load(open("Losses/loss_"+model_name+".pth","rb"))
     train,test = loss
     if "-abs" not in sys.argv:
-        train = [t/20000 for t in train]
+        train = [t/100000 for t in train]
         test = [t/1000 for t in test]
     print(len(train))
     plt.plot(train,label="train")
