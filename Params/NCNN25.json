@@ -6,14 +6,14 @@
     "train":["NaiveDatasetTrain-100000-4.pth"],
     "test":["NaiveDatasetTest-1000-4.pth"],
     "optimiser":"NAdam",
-    "optimiser-args":{"lr":1e-3},
-    "loss-function":"cos_log",
+    "optimiser-args":{"lr":1e-1},
+    "loss-function":"cos_mean",
     "supervised":true,
     "batch":32,
     "scheduler":"CyclicLR",
-    "scheduler-args":{"base_lr":1e-4,
-                        "max_lr":1e-3,
-                        "step_size_up":5,
+    "scheduler-args":{"base_lr":1e-3,
+                        "max_lr":1e-1,
+                        "step_size_up":10,
                         "cycle_momentum":false
                     }
 }

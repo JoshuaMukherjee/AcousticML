@@ -7,7 +7,7 @@
     "test":["NaiveDatasetTest-1000-4.pth"],
     "optimiser":"NAdam",
     "optimiser-args":{"lr":1e-3},
-    "loss-function":"cos_log",
+    "loss-function":"cos_mean",
     "supervised":true,
     "batch":32,
     "scheduler":"CyclicLR",

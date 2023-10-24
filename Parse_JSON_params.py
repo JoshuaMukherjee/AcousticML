@@ -14,7 +14,7 @@ import Network_Train_Functions
 
 
 files = [
-   "NCNN23"
+   "NCNN26"
 ]
 
 
