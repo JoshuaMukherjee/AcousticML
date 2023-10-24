@@ -164,7 +164,7 @@ if "-h" in sys.argv:
         out = propagate(out,p)
         # presssure = torch.abs(out)
         
-        for pres in torch.abs(out):
+        for pres in torch.abs(out).squeeze_():
             pressure_means.append(pres.cpu().detach().numpy())
         
 
@@ -179,8 +179,8 @@ if "-h" in sys.argv:
     print(len(pressure_means_wgs))
     print(len(pressure_means_naive))
     
-    plt.hist(pressure_means, label="Model", histtype=u'step')
-    plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
-    plt.hist(pressure_means_naive,label="Naive", histtype=u'step')
+    plt.hist([pressure_means,pressure_means_wgs,pressure_means_naive] , label=["Model","WGS","Naive"], histtype=u'step')
+    # plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
+    # plt.hist(pressure_means_naive,label="Naive", histtype=u'step')
     plt.legend()
     plt.show()
