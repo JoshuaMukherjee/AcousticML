@@ -28,7 +28,7 @@ else:
 
 if "-l" in sys.argv:
 
-    TRAINSIZE = 100000
+    TRAINSIZE = 600000
     TESTSIZE=1000
 
     model_name = sys.argv[1]
@@ -38,8 +38,8 @@ if "-l" in sys.argv:
     loss = pickle.load(open("Losses/loss_"+model_name+".pth","rb"))
     train,test = loss
     if "-abs" not in sys.argv:
-        train = [t/100000 for t in train]
-        test = [t/1000 for t in test]
+        train = [t/TRAINSIZE for t in train]
+        test = [t/TESTSIZE for t in test]
     print(len(train))
     plt.plot(train,label="train")
     plt.plot(test,label="test")
@@ -179,8 +179,8 @@ if "-h" in sys.argv:
     print(len(pressure_means_wgs))
     print(len(pressure_means_naive))
     
-    plt.hist([pressure_means,pressure_means_wgs,pressure_means_naive] , label=["Model","WGS","Naive"], histtype=u'step')
+    plt.hist([pressure_means,pressure_means_wgs,pressure_means_naive] , label=["Model","WGS","Naive"], histtype=u'step', bins=30)
     # plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
     # plt.hist(pressure_means_naive,label="Naive", histtype=u'step')
     plt.legend()
-    plt.show()
+    # plt.show()
