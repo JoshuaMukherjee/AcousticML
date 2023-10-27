@@ -50,6 +50,9 @@ def propagate(activations, points):
     out = torch.stack(out,0)
     return out.squeeze()
 
+def propagate_abs(activations, points):
+    out = propagate(activations, points)
+    return torch.abs(out)
 
 def permute_points(points,index,axis=0):
     if axis == 0:
@@ -155,13 +158,37 @@ def create_points(N,B=1,x=None,y=None,z=None, min_pos=-0.06, max_pos = 0.06):
     return points
     
 
+def add_lev_sig(activation):
+    act = torch.clone(activation)
+    s = activation.shape
+    B = s[0]
 
+    act = torch.reshape(act,(B,2, 256))
+
+    act[:,0,:] = torch.e**(1j*(torch.pi + torch.angle(act[:,0,:])))
+    act = torch.reshape(act,s)
+
+    return act
+
+   
+ 
 
 
 if __name__ == "__main__":
+    from Solvers import wgs
+    
+    points = create_points(4,2)
+    A = forward_model(points[0,:])
+    _, _, x = wgs(A,torch.ones(4,1).to(device)+0j,200)
+    x = torch.unsqueeze(x,0)
+    
+    pr = propagate(x,points)
+    print(torch.abs(pr))
+    
+    x2 = add_lev_sig(x)
+    pr2 = propagate(x2,points)
+    print(torch.abs(pr2))
 
-    p = create_points(4,2)
-    print(p)
 
     '''
 
