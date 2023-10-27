@@ -1,0 +1,29 @@
+{
+    "net":"CNN",
+    "net-args":{
+        "layers":[32,512,512,128,64,2],
+        "channels_in":2,
+        "conv_args":{
+            "kernel_size":3,
+            "padding":"same"
+        },
+        "activation":"ReLU",
+        "norm":"BatchNorm2d"
+    },
+    "start-epochs":0,
+    "epochs":100,
+    "train":["NaiveDatasetTrain-100000-4.pth"],
+    "test":["NaiveDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-2},
+    "loss-function":"AcousNetLoss",
+    "supervised":true,
+    "batch":32,
+    "train-function":"train_naive_holograam",
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":1e-1,
+                        "step_size_up":5,
+                        "cycle_momentum":false
+                    }
+}

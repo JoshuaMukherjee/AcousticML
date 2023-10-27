@@ -27,6 +27,10 @@ else:
 
 
 if "-l" in sys.argv:
+
+    TRAINSIZE = 600000
+    TESTSIZE=1000
+
     model_name = sys.argv[1]
 
     model = torch.load("Models/model_"+model_name+latest+".pth")
@@ -34,8 +38,8 @@ if "-l" in sys.argv:
     loss = pickle.load(open("Losses/loss_"+model_name+".pth","rb"))
     train,test = loss
     if "-abs" not in sys.argv:
-        train = [t/20000 for t in train]
-        test = [t/1000 for t in test]
+        train = [t/TRAINSIZE for t in train]
+        test = [t/TESTSIZE for t in test]
     print(len(train))
     plt.plot(train,label="train")
     plt.plot(test,label="test")
@@ -160,7 +164,7 @@ if "-h" in sys.argv:
         out = propagate(out,p)
         # presssure = torch.abs(out)
         
-        for pres in torch.abs(out):
+        for pres in torch.abs(out).squeeze_():
             pressure_means.append(pres.cpu().detach().numpy())
         
 
@@ -170,10 +174,13 @@ if "-h" in sys.argv:
         naive_p,_ = naive_solver_batch(p)
         for presN in torch.abs(naive_p).squeeze_():
             pressure_means_naive.append(presN.cpu().detach().numpy())
+
+    print(len(pressure_means))
+    print(len(pressure_means_wgs))
+    print(len(pressure_means_naive))
     
-    
-    plt.hist(pressure_means, label="Model", histtype=u'step')
-    plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
-    plt.hist(pressure_means_naive,label="Naive", histtype=u'step')
+    plt.hist([pressure_means,pressure_means_wgs,pressure_means_naive] , label=["Model","WGS","Naive"], histtype=u'step', bins=30)
+    # plt.hist(pressure_means_wgs,label="WGS", histtype=u'step')
+    # plt.hist(pressure_means_naive,label="Naive", histtype=u'step')
     plt.legend()
-    plt.show()
+    # plt.show()
