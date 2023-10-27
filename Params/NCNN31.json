@@ -1,0 +1,22 @@
+{
+    "net":"UNET",
+    "net-args":{
+        "in_channels":2,
+        "out_channels":2
+    },
+    "start-epochs":0,
+    "epochs":50,
+    "train":["NaiveDatasetTrain-600000-4.pth"],
+    "test":["NaiveDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-2},
+    "loss-function":"mse_loss",
+    "supervised":true,
+    "batch":32,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":1e-2,
+                        "step_size_up":10,
+                        "cycle_momentum":false
+                    }
+}
