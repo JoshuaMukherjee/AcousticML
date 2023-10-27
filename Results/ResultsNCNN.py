@@ -11,7 +11,9 @@ sys.path.insert(1, p)
 
 from Solvers import wgs, gspat,naive_solver, naive_solver_batch
 from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset
-from Utilities import propagate, forward_model, device, do_NCNN
+from Utilities import propagate, forward_model, device, do_NCNN, create_points, add_lev_sig, propagate_abs
+from Visualiser import Visualise
+from Gorkov import gorkov_autograd
 
 if "-latest" in sys.argv:
     latest = "_latest"
@@ -224,3 +226,24 @@ if "-r" in sys.argv:
     # plt.hist(pressure_means_naive,label="Naive", histtype=u'step')
     plt.legend()
     plt.show()
+
+
+if "-v" in sys.argv:
+    model_name = sys.argv[1]
+
+    model = torch.load("Models/model_"+model_name+".pth")
+    N = 4
+    P = 1
+    points= create_points(N,y=0)
+   
+    out = do_NCNN(model,points)
+    activation = add_lev_sig(out)
+
+    A = torch.tensor((-0.08, 0, 0.08))
+    B = torch.tensor((0.08, 0, 0.08))
+    C = torch.tensor((-0.08, 0, -0.08))
+
+    Visualise(A,B,C,out,activation,[propagate_abs,gorkov_autograd])
+
+
+    

@@ -41,7 +41,6 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     if len(activation.shape) < 3:
         activation.unsqueeze_(0)
     
-    activation = add_lev_sig(activation)
 
     AB = torch.tensor([B[0] - A[0], B[1] - A[1], B[2] - A[2]])
     AC = torch.tensor([C[0] - A[0], C[1] - A[1], C[2] - A[2]])
