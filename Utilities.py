@@ -45,7 +45,8 @@ def propagate(activations, points):
     out = []
     for i in range(activations.shape[0]):
         A = forward_model(points[i]).to(device)
-       
+
+
         out.append(A@activations[i])
     out = torch.stack(out,0)
     return out.squeeze()
@@ -141,8 +142,8 @@ def do_NCNN(net, points):
     # activation_out = torch.reshape(activation_out_img,(naive_act.shape[0],512)) + 1j
     activation_out = torch.e** (1j*(torch.reshape(activation_out_img,(naive_act.shape[0],512))))
 
-
-    return activation_out
+    
+    return activation_out.unsqueeze_(2)
 
 def create_points(N,B=1,x=None,y=None,z=None, min_pos=-0.06, max_pos = 0.06):
     points = torch.FloatTensor(B, 3, N).uniform_(min_pos,max_pos).to(device)

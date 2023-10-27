@@ -229,6 +229,7 @@ if "-r" in sys.argv:
 
 
 if "-v" in sys.argv:
+   
     model_name = sys.argv[1]
 
     model = torch.load("Models/model_"+model_name+".pth")
@@ -243,7 +244,8 @@ if "-v" in sys.argv:
     B = torch.tensor((0.08, 0, 0.08))
     C = torch.tensor((-0.08, 0, -0.08))
 
-    Visualise(A,B,C,out,activation,[propagate_abs,gorkov_autograd])
+    print("Visualising...")
+    Visualise(A,B,C,activation,points,[propagate_abs,gorkov_autograd])
 
 
     

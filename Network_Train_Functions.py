@@ -410,5 +410,6 @@ default_functions = {
     "PointNet":train_PointNet,
     "ResPointNet":train_PointNet,
     "F_CNN":train_FCNN,
-    "CNN":train_naive
+    "CNN":train_naive,
+    "UNET":train_naive
 }

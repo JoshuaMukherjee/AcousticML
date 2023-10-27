@@ -1,5 +1,5 @@
 import torch
-from Utilities import propagate_abs, add_lev_sig
+from Utilities import propagate_abs, add_lev_sig, device
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("TkAgg")
@@ -16,6 +16,7 @@ def get_point_pos(A,B,C, points, res=(200,200)):
 
     
     points = torch.split(points.squeeze_().T,1)
+    print(points)
     points = [pt.squeeze_() for pt in points]
     print(points)
 
@@ -49,17 +50,19 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     step_y = AC / res[1]
 
     result = torch.zeros(res)
-  
+    posX = torch.tensor([0])
+
     for i in range(0,res[0]):
         posX = A + step_x * i
         for j in range(res[1]):
-            pos = posX + step_y * j
+            pos = (posX + step_y * j).to(device)
 
             pos.unsqueeze_(0)
             pos.unsqueeze_(2)
-        
+            
             field_val = colour_function(activation,pos,**colour_function_args)
             result[i,j] = field_val
+        print(i)
     
     return result
 
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     N = 4
     points=  create_points(N,y=0)
     print(points)
-    F = forward_model(points[0,:])
+    F = forward_model(points[0,:]).to(device)
     _, _, x = wgs(F,torch.ones(N,1).to(device)+0j,200)
 
     Visualise(A,B,C,x,colour_functions=[propagate_abs,gorkov_autograd],points=points,res=res)
