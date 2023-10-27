@@ -141,9 +141,29 @@ def do_NCNN(net, points):
 
     return activation_out
 
+def create_points(N,B=1,x=None,y=None,z=None, min_pos=-0.06, max_pos = 0.06):
+    points = torch.FloatTensor(B, 3, N).uniform_(min_pos,max_pos).to(device)
+    if x is not None:
+        points[:,0,:] = x
+    
+    if y is not None:
+        points[:,1,:] = y
+    
+    if z is not None:
+        points[:,2,:] = z
+
+    return points
+    
+
+
 
 
 if __name__ == "__main__":
+
+    p = create_points(4,2)
+    print(p)
+
+    '''
 
     from torch.utils.data import DataLoader 
     from Dataset import NaiveDataset
@@ -164,7 +184,7 @@ if __name__ == "__main__":
         print(mse_loss(torch.abs(f), torch.abs(pr)))
         print(torch.abs(field))
 
-
+    '''
 
 
     '''
