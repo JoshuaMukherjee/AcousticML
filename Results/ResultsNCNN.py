@@ -11,8 +11,8 @@ sys.path.insert(1, p)
 
 from Solvers import wgs, gspat,naive_solver, naive_solver_batch
 from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset
-from Utilities import propagate, forward_model, device, do_NCNN, create_points, add_lev_sig, propagate_abs
-from Visualiser import Visualise
+from Utilities import propagate, forward_model, device, do_NCNN, create_points, add_lev_sig, propagate_abs, create_board
+from Visualiser import Visualise, Visualise_single, get_point_pos
 from Gorkov import gorkov_autograd
 
 if "-latest" in sys.argv:
@@ -58,7 +58,6 @@ if "-l" in sys.argv:
 
     plt.legend()
     plt.show()
-
 
 if "-p" in sys.argv:
     
@@ -130,7 +129,6 @@ if "-p" in sys.argv:
         
     plt.show()
 
-
 if "-t" in sys.argv:
     model_name = sys.argv[1]
 
@@ -187,7 +185,6 @@ if "-h" in sys.argv:
     plt.legend()
     plt.show()
 
-
 if "-r" in sys.argv:
     model_name = sys.argv[1]
 
@@ -227,12 +224,11 @@ if "-r" in sys.argv:
     plt.legend()
     plt.show()
 
-
-if "-v" in sys.argv:
+if "-vg" in sys.argv:
    
     model_name = sys.argv[1]
 
-    model = torch.load("Models/model_"+model_name+".pth")
+    model = torch.load("Models/model_"+model_name+".pth", map_location=torch.device(device))
     N = 4
     P = 1
     points= create_points(N,y=0)
@@ -247,5 +243,156 @@ if "-v" in sys.argv:
     print("Visualising...")
     Visualise(A,B,C,activation,points,[propagate_abs,gorkov_autograd])
 
+if "-v" in sys.argv:
+    model_name = sys.argv[1]
 
+    model = torch.load("Models/model_"+model_name+".pth", map_location=torch.device(device))
+    N = 4
+    P = 1
+    dataset = NaiveDataset(P,N)
+    data = iter(DataLoader(dataset,1,shuffle=True))
+    results = []
+
+    x_left = -0.08
+    x_right = 0.08
+
+    A = torch.tensor((x_left, 0, 0.13))
+    B = torch.tensor((x_right, 0, 0.13))
+    C = torch.tensor((x_left, 0, -0.13))
+    res = (300,300)
+    labels = []
+    point_poses = []
+
+    pitch=0.0105
+    grid_vec=pitch*(torch.arange(-17/2+1, 17/2, 1))
+    Z = .234/2
+  
+    trans = []
+
+    # print(trans_x)
+
+    for points,a,pr,naive in data:
+        print(points)
+        out = do_NCNN(model,points)
+        activation = add_lev_sig(out)
+        
+        for i in range(N):
+            point = points[:,:,i].unsqueeze_(2)
+            y = point[0,1,0]
+            A[1] = y
+            B[1] = y
+            C[1] = y
+
+            top_pos = torch.stack([grid_vec,torch.ones_like(grid_vec) * y, torch.ones_like(grid_vec) * Z])
+            top_pos.unsqueeze_(0)
+            top = get_point_pos(A,B,C,top_pos,flip=False,res=res)
+
+            bottom_pos = torch.stack([grid_vec,torch.ones_like(grid_vec) * y, torch.ones_like(grid_vec) * -1*Z])
+            bottom_pos.unsqueeze_(0)
+            bottom = get_point_pos(A,B,C,bottom_pos,flip=False,res=res)
+
+            trans.append(top + bottom)
+
+            result = Visualise_single(A,B,C,activation,res=res)
+            point_pos = get_point_pos(A,B,C,point,res=res)
+            point_poses.append(point_pos)
+            results.append(result)
+            labels.append(str(round(point[0,0,0].item(),3)) + "," + str(round(point[0,1,0].item(),3)) + "," + str(round(point[0,2,0].item(),3)))
+
+   
     
+    for i,result in enumerate(results):
+        trans_x = [t[0] for t in trans[i]]
+        trans_y = [t[1] for t in trans[i]]
+
+        plt.subplot(2,2,i+1)
+        plt.imshow(result.cpu().detach().numpy(),cmap="hot")
+        plt.xticks([])
+        plt.yticks([])
+        plt.colorbar()
+        plt.title(labels[i])
+        pts_pos_t = point_poses[i][0]
+        plt.scatter(pts_pos_t[1],pts_pos_t[0],marker=".") #Point positions
+        plt.scatter(trans_x,trans_y,marker="s",color='black') #Transducers
+        plt.xlim(0, res[1])
+        
+    plt.tight_layout()
+    plt.show()
+
+if "-g" in sys.argv:
+    model_name = sys.argv[1]
+
+    model = torch.load("Models/model_"+model_name+latest+".pth", map_location=torch.device(device))
+
+    N = 4
+    P = 5
+    if "-overfit" not in sys.argv:
+        dataset = NaiveDataset(P,N)
+        print("Generated data...")
+        
+    else:
+        dataset = torch.load("./Datasets/NaiveDataset"+norm+"Train-4-4.pth")
+        P = len(dataset)
+
+    data = iter(DataLoader(dataset,1,shuffle=True))
+    us = []
+    wgs_200_us = []
+    gs_pat_us = []
+    naive_us = []
+
+
+    for p,a,pr,naive in data:
+
+
+        out = do_NCNN(model, p)
+        out = add_lev_sig(out)
+        U = gorkov_autograd(out,p)
+        
+
+        U_wgs = gorkov_autograd(add_lev_sig(a.unsqueeze_(2)),p)
+      
+        A = forward_model(p[0,:])
+        backward = torch.conj(A).T
+        R = A@backward
+        act,_ = gspat(R,A,backward,torch.ones(N,1).to(device)+0j, 200)
+        act = act.T
+        U_GSPAT = gorkov_autograd(add_lev_sig(act.unsqueeze_(2)),p)
+    
+        naive_p, naive_out = naive_solver_batch(p)
+        naive_out.unsqueeze_(2)
+        U_naive = gorkov_autograd(add_lev_sig(naive_out),p)
+       
+
+
+        us.append(U.squeeze_().cpu().detach().numpy())
+        wgs_200_us.append(U_wgs.squeeze_().cpu().detach().numpy())
+        gs_pat_us.append(U_GSPAT.squeeze_().cpu().detach().numpy())
+        naive_us.append(U_naive.squeeze_().cpu().detach().numpy())
+
+
+
+    fig, axs = plt.subplots(1,P)
+    fig.tight_layout()
+    for i in range(P):
+        to_plot = {}
+
+        print("Model", us[i])
+        print("WGS",wgs_200_us[i])
+        print("GSPAT",gs_pat_us[i])
+        print("Naive",naive_us[i])
+
+        print()
+
+        to_plot["Model"] = us[i]
+        to_plot["WGS"] = wgs_200_us[i]
+        to_plot["GS PAT"] = gs_pat_us[i]
+        to_plot["Naive"] = naive_us[i]
+
+        axs[i].boxplot(to_plot.values())
+        axs[i].set_xticklabels(to_plot.keys(), rotation=90)
+        axs[i].set_ylim(top=1e-5,bottom=-9e-5)
+        # axs[i].set_yticklabels(range(0,13000,2000), rotation=90)
+        axs[i].set_ylabel("U")
+
+
+    plt.show()
