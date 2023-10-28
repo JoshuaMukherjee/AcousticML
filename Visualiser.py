@@ -1,10 +1,10 @@
 import torch
-from Utilities import propagate_abs, add_lev_sig, device
+from Utilities import propagate_abs, add_lev_sig, device, create_board
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("TkAgg")
 
-def get_point_pos(A,B,C, points, res=(200,200)):
+def get_point_pos(A,B,C, points, res=(200,200),flip=True):
     AB = torch.tensor([B[0] - A[0], B[1] - A[1], B[2] - A[2]])
     AC = torch.tensor([C[0] - A[0], C[1] - A[1], C[2] - A[2]])
 
@@ -14,10 +14,9 @@ def get_point_pos(A,B,C, points, res=(200,200)):
     step_x = AB / res[0]
     step_y = AC / res[1]
 
-    
-    points = torch.split(points.squeeze_().T,1)
-    print(points)
-    points = [pt.squeeze_() for pt in points]
+    if points.shape[2] > 1:
+        points = torch.split(points.squeeze_().T,1)
+        points = [pt.squeeze_() for pt in points]
     print(points)
 
     pts_norm = []
@@ -27,14 +26,21 @@ def get_point_pos(A,B,C, points, res=(200,200)):
         px = Apt / step_x
         py = Apt / step_y
         pt_pos = torch.zeros((2))
-        pt_pos[0]= torch.round(px[ab_dir])
-        pt_pos[1]=torch.round(py[ac_dir])
+        if not flip:
+            pt_pos[0]= torch.round(px[ab_dir])
+            pt_pos[1]=torch.round(py[ac_dir])
+        else:
+            pt_pos[1]= torch.round(px[ab_dir])
+            pt_pos[0]=torch.round(py[ac_dir])
+        
         pts_norm.append(pt_pos)
+
+   
 
     return pts_norm
 
 
-def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_function_args={}, res=(200,200)):
+def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_function_args={}, res=(200,200), flip=True):
     '''
     Visalises field generated from activation to the plane ABC
     colour_function defined what is plotted, default is pressure 
@@ -62,7 +68,12 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
             
             field_val = colour_function(activation,pos,**colour_function_args)
             result[i,j] = field_val
-        print(i)
+        print(i,end=" ")
+    if flip:
+        # result = torch.flip(result,[0,])
+        # result = torch.rot90(result)
+        result = torch.rot90(torch.fliplr(result))
+    
     
     return result
 
