@@ -63,7 +63,7 @@ if "-p" in sys.argv:
     
     model_name = sys.argv[1]
 
-    model = torch.load("Models/model_"+model_name+latest+".pth")
+    model = torch.load("Models/model_"+model_name+latest+".pth", map_location=torch.device(device))
 
     N = 4
     P = 5
@@ -246,6 +246,8 @@ if "-vg" in sys.argv:
 if "-v" in sys.argv:
     model_name = sys.argv[1]
 
+    TRANS = '-trans' in sys.argv
+
     model = torch.load("Models/model_"+model_name+".pth", map_location=torch.device(device))
     N = 4
     P = 1
@@ -282,16 +284,16 @@ if "-v" in sys.argv:
             A[1] = y
             B[1] = y
             C[1] = y
+            if TRANS:
+                top_pos = torch.stack([grid_vec,torch.ones_like(grid_vec) * y, torch.ones_like(grid_vec) * Z])
+                top_pos.unsqueeze_(0)
+                top = get_point_pos(A,B,C,top_pos,flip=False,res=res)
 
-            top_pos = torch.stack([grid_vec,torch.ones_like(grid_vec) * y, torch.ones_like(grid_vec) * Z])
-            top_pos.unsqueeze_(0)
-            top = get_point_pos(A,B,C,top_pos,flip=False,res=res)
+                bottom_pos = torch.stack([grid_vec,torch.ones_like(grid_vec) * y, torch.ones_like(grid_vec) * -1*Z])
+                bottom_pos.unsqueeze_(0)
+                bottom = get_point_pos(A,B,C,bottom_pos,flip=False,res=res)
 
-            bottom_pos = torch.stack([grid_vec,torch.ones_like(grid_vec) * y, torch.ones_like(grid_vec) * -1*Z])
-            bottom_pos.unsqueeze_(0)
-            bottom = get_point_pos(A,B,C,bottom_pos,flip=False,res=res)
-
-            trans.append(top + bottom)
+                trans.append(top + bottom)
 
             result = Visualise_single(A,B,C,activation,res=res)
             point_pos = get_point_pos(A,B,C,point,res=res)
@@ -302,8 +304,7 @@ if "-v" in sys.argv:
    
     
     for i,result in enumerate(results):
-        trans_x = [t[0] for t in trans[i]]
-        trans_y = [t[1] for t in trans[i]]
+       
 
         plt.subplot(2,2,i+1)
         plt.imshow(result.cpu().detach().numpy(),cmap="hot")
@@ -313,7 +314,10 @@ if "-v" in sys.argv:
         plt.title(labels[i])
         pts_pos_t = point_poses[i][0]
         plt.scatter(pts_pos_t[1],pts_pos_t[0],marker=".") #Point positions
-        plt.scatter(trans_x,trans_y,marker="s",color='black') #Transducers
+        if TRANS:
+            trans_x = [t[0] for t in trans[i]]
+            trans_y = [t[1] for t in trans[i]]
+            plt.scatter(trans_x,trans_y,marker="s",color='black') #Transducers
         plt.xlim(0, res[1])
         
     plt.tight_layout()
