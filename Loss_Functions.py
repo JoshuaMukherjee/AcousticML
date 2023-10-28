@@ -1,4 +1,6 @@
 import torch
+from Gorkov import gorkov_autograd
+from Utilities import add_lev_sig
 
 def max_loss(pressure, true):
   if len(true.shape) > 1:
@@ -116,6 +118,12 @@ def cos_cos_mean_pressure(activation_out,target,field,target_pressure,alpha=1,be
     # print(holo,alpha*press, beta*max_p)
 
     return torch.sum(holo+alpha*press+beta*max_p)
+
+def gorkov_loss(activation, points):
+  activation = add_lev_sig(activation)
+  gorkov = gorkov_autograd(activation,points,retain_graph=True)
+  return torch.sum(gorkov)
+  
 
 
 if __name__ == "__main__":
