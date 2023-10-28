@@ -404,6 +404,60 @@ def train_naive_holograam(net, params):
     return running, {}
 
 
+def train_naive_hologram_points(net, params):
+
+    optimiser = params["optimiser"]
+    loss_function = params["loss_function"]
+    loss_params = params["loss_params"]
+    datasets = params["datasets"]
+    test= params["test"]
+    supervised= params["supervised"]
+    scheduler = params["scheduler"]
+
+    running = 0
+    if not test:
+        net.train()
+    else:
+        net.eval()
+    
+    if not test:
+        optimiser.zero_grad()       
+
+    for dataset in datasets:
+        for points, activations, pressures, naive_act in iter(dataset):
+            
+                    
+            
+
+            act_in = torch.reshape(naive_act,(naive_act.shape[0],2,16,16))
+            act_phases = torch.angle(act_in)
+            activation_out_img = net(act_phases) 
+            
+            activation_out = torch.e** (1j*(torch.reshape(activation_out_img,(naive_act.shape[0],512,1))))
+
+
+            if supervised:
+                loss = loss_function(activation_out,activations,points,**loss_params)
+            else:
+                loss = loss_function(activation_out,points,**loss_params) 
+            
+            running += loss.item()
+            if not test:
+                optimiser.zero_grad()    
+                loss.backward(retain_graph = True)
+                optimiser.step()
+                   
+
+    if not test: #schedule LR on epochs
+        if scheduler is not None:
+            if type(scheduler) == torch.optim.lr_scheduler.ReduceLROnPlateau:
+                scheduler.step(running)
+            else:
+                scheduler.step()
+    
+    return running, {}
+
+
 
 
 default_functions = {
