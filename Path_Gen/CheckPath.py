@@ -4,6 +4,9 @@ import torch
 import itertools
 import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.animation as animation
+
+
 matplotlib.use("TkAgg")
 
 
@@ -116,3 +119,44 @@ if '-g' in sys.argv:
     plt.xlabel("Frame")
     plt.title("Gor'Kov, "+path_file+", "+ model_name)
     plt.show()
+
+if "-t" in sys.argv:
+
+    phase_rows = [i.squeeze_() for i in phase_rows]
+
+    data = torch.angle(torch.reshape(phase_rows[0],(2,16,16)))
+    
+    fig = plt.figure( figsize=(8,3) )
+    fig.suptitle("Phases " +path_file +" " + model_name)
+    ax1 = plt.subplot(1,3,1)
+    im1 = plt.imshow(data[0,:],vmin=-1*torch.pi, vmax=torch.pi)
+    ax2 = plt.subplot(1,3,2)
+    im2 = plt.imshow(data[1,:],vmin=-1*torch.pi, vmax=torch.pi)
+    cax = plt.subplot(1,30,21)
+    plt.colorbar(im1,cax=cax)
+    
+    ax1.set_title("Board 1 Frame "+str(1))
+    ax2.set_title("Board 2 Frame "+str(1))
+
+    def animate(i):
+        d = torch.angle(torch.reshape(phase_rows[i],(2,16,16)))
+        # d = torch.rand((2,16,16))
+        im1.set_array(d[0,:])
+        im2.set_array(d[1,:])
+
+        ax1.set_title("Top Board Frame "+str(i))
+        ax2.set_title("Top Board Frame "+str(i))
+
+        return [im1,im2]
+
+    ani = animation.FuncAnimation(fig, animate, repeat=True,
+                                    frames=len(phase_rows) - 1, interval=1)
+
+    # plt.show()
+    ani.save("Figs/TransducerPhases/transducers-"+path_file+"-"+model_name+".gif", dpi=300, writer=animation.PillowWriter(fps=1))
+    print("Saved to", "Figs/TransducerPhases/transducers-"+path_file+"-"+model_name+".gif")
+     
+
+
+    
+        
