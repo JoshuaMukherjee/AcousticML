@@ -83,6 +83,7 @@ def Visualise_single_slow(A,B,C,activation,colour_function=propagate_abs, colour
     
 
     # plt.show()
+
 def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_function_args={}, res=(200,200), flip=True):
     '''
     Visalises field generated from activation to the plane ABC
@@ -98,32 +99,16 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     step_x = AB / res[0]
     step_y = AC / res[1]
 
-    posX = torch.tensor([0])
-
-    positions = []
+    positions = torch.zeros((1,3,res[0]*res[1])).to(device)
 
     for i in range(0,res[0]):
-        posX = A + step_x * i
         for j in range(res[1]):
-            pos = (posX + step_y * j).to(device)
-
-            # pos.unsqueeze_(0)
-            # pos.unsqueeze_(2)
-            
-            positions.append(pos)
-
-            # field_val = colour_function(activation,pos,**colour_function_args)
-        # print(i,end=" ")
-    # print()
-
-
-    positions = torch.stack(positions).T.unsqueeze_(0)
+            positions[:,:,i*res[0]+j] = A + step_x * i + step_y * j
+           
     field_val = colour_function(activation,positions,**colour_function_args)
     result = torch.reshape(field_val, res)
 
     if flip:
-        # result = torch.flip(result,[0,])
-        # result = torch.rot90(result)
         result = torch.rot90(torch.fliplr(result))
     
     
@@ -133,7 +118,7 @@ def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colou
     results = []
     if len(points) > 0:
         pts_pos = get_point_pos(A,B,C,points,res)
-        print(pts_pos)
+        # print(pts_pos)
         pts_pos_t = torch.stack(pts_pos).T
 
 
