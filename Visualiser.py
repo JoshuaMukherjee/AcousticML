@@ -40,8 +40,9 @@ def get_point_pos(A,B,C, points, res=(200,200),flip=True):
     return pts_norm
 
 
-def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_function_args={}, res=(200,200), flip=True):
+def Visualise_single_slow(A,B,C,activation,colour_function=propagate_abs, colour_function_args={}, res=(200,200), flip=True):
     '''
+    OLD SLOW VERSION
     Visalises field generated from activation to the plane ABC
     colour_function defined what is plotted, default is pressure 
     '''
@@ -82,6 +83,51 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     
 
     # plt.show()
+def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_function_args={}, res=(200,200), flip=True):
+    '''
+    Visalises field generated from activation to the plane ABC
+    colour_function defined what is plotted, default is pressure 
+    '''
+    if len(activation.shape) < 3:
+        activation.unsqueeze_(0)
+    
+
+    AB = torch.tensor([B[0] - A[0], B[1] - A[1], B[2] - A[2]])
+    AC = torch.tensor([C[0] - A[0], C[1] - A[1], C[2] - A[2]])
+
+    step_x = AB / res[0]
+    step_y = AC / res[1]
+
+    posX = torch.tensor([0])
+
+    positions = []
+
+    for i in range(0,res[0]):
+        posX = A + step_x * i
+        for j in range(res[1]):
+            pos = (posX + step_y * j).to(device)
+
+            # pos.unsqueeze_(0)
+            # pos.unsqueeze_(2)
+            
+            positions.append(pos)
+
+            # field_val = colour_function(activation,pos,**colour_function_args)
+        # print(i,end=" ")
+    # print()
+
+
+    positions = torch.stack(positions).T.unsqueeze_(0)
+    field_val = colour_function(activation,positions,**colour_function_args)
+    result = torch.reshape(field_val, res)
+
+    if flip:
+        # result = torch.flip(result,[0,])
+        # result = torch.rot90(result)
+        result = torch.rot90(torch.fliplr(result))
+    
+    
+    return result
 
 def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colour_function_args=None, res=(200,200), cmaps=[]):
     results = []
@@ -124,10 +170,18 @@ if __name__ == "__main__":
     from Solvers import wgs
     from Gorkov import gorkov_autograd
 
+    
     N = 4
     points=  create_points(N,y=0)
-    print(points)
+    print(points.shape)
     F = forward_model(points[0,:]).to(device)
     _, _, x = wgs(F,torch.ones(N,1).to(device)+0j,200)
-
+    
+    # result = Visualise_single_fast(A,B,C,x)
+    # plt.imshow(result.cpu().detach().numpy(),cmap='hot')
+    # plt.show()
+    # print(result)
+    
+    x.unsqueeze_(0)
+    x = add_lev_sig(x)
     Visualise(A,B,C,x,colour_functions=[propagate_abs,gorkov_autograd],points=points,res=res)
