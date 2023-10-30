@@ -17,6 +17,14 @@ def wgs(A, b, K):
                     
     return y, p, x
 
+def wgs_wrapper(points,itter = 200):
+    acts = []
+    for point in points:
+        A=forward_model(point, transducers()).to(device)
+        _, _, act = wgs(A,torch.ones(point.shape[1],1).to(device)+0j,itter)
+        acts.append(act)
+    act = torch.stack(acts)
+    return act
 
 
 def gspat(R,forward, backward, target, iterations):
@@ -39,6 +47,17 @@ def gspat(R,forward, backward, target, iterations):
     points = torch.matmul(forward,phase_hologram)
 
     return phase_hologram, points
+
+def gspat_wrapper(points):
+    holo = []
+    for p in points:
+        A = forward_model(p)
+        backward = torch.conj(A).T
+        R = A@backward
+        phase_hologram,pres = gspat(R,A,backward,torch.ones(p.shape[1],1).to(device)+0j, 200)
+        holo.append(phase_hologram)
+    holo = torch.stack(holo)
+    return holo
 
 
 def naive(points):
@@ -78,6 +97,10 @@ def naive_solver(points,transd=transducers()):
 
 
     return out, trans_phase
+
+def naive_solver_wrapper(points):
+    out,act = naive_solver_batch(points)
+    return act
 
 
 def ph_thresh(z_last,z,threshold):
