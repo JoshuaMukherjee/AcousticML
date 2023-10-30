@@ -35,8 +35,6 @@ if "-l" in sys.argv:
 
     model_name = sys.argv[1]
 
-    model = torch.load("Models/model_"+model_name+latest+".pth")
-
     loss = pickle.load(open("Losses/loss_"+model_name+".pth","rb"))
     train,test = loss
     if "-abs" not in sys.argv:
