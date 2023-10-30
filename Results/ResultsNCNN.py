@@ -36,6 +36,7 @@ if "-l" in sys.argv:
     model_name = sys.argv[1]
 
     loss = pickle.load(open("Losses/loss_"+model_name+".pth","rb"))
+    model = torch.load("Models/model_"+model_name+".pth", map_location=torch.device(device))
     train,test = loss
     if "-abs" not in sys.argv:
         train = [t/TRAINSIZE for t in train]
