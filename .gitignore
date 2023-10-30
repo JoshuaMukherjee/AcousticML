@@ -5,3 +5,6 @@ Models/*
 .DS_Store
 Figs/*
 *.ipynb
+Path_Gen/*
+Path_Gen/Outputs/*
+Path_Gen/Paths/*
