@@ -261,6 +261,7 @@ if "-v" in sys.argv:
     B = torch.tensor((x_right, 0, 0.13))
     C = torch.tensor((x_left, 0, -0.13))
     res = (300,300)
+    # res=(10,10)
     labels = []
     point_poses = []
 
@@ -301,15 +302,17 @@ if "-v" in sys.argv:
             labels.append(str(round(point[0,0,0].item(),3)) + "," + str(round(point[0,1,0].item(),3)) + "," + str(round(point[0,2,0].item(),3)))
 
    
-    
+    axs = []
+    ids = [1,2,4,5]
     for i,result in enumerate(results):
        
 
-        plt.subplot(2,2,i+1)
-        plt.imshow(result.cpu().detach().numpy(),cmap="hot")
+        ax = plt.subplot(2,3,ids[i])
+        axs.append(ax)
+        im = plt.imshow(result.cpu().detach().numpy(),cmap="hot")
         plt.xticks([])
         plt.yticks([])
-        plt.colorbar()
+        # plt.colorbar()
         plt.title(labels[i])
         pts_pos_t = point_poses[i][0]
         plt.scatter(pts_pos_t[1],pts_pos_t[0],marker=".") #Point positions
@@ -318,8 +321,11 @@ if "-v" in sys.argv:
             trans_y = [t[1] for t in trans[i]]
             plt.scatter(trans_x,trans_y,marker="s",color='black') #Transducers
         plt.xlim(0, res[1])
-        
-    plt.tight_layout()
+    
+    cax = plt.subplot(1,30,21)
+    plt.colorbar(im,cax=cax,fraction=0.01)
+    
+    # plt.tight_layout()
     plt.show()
 
 if "-g" in sys.argv:
