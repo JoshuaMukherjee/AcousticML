@@ -169,7 +169,7 @@ def add_lev_sig(activation):
     act[:,0,:] = torch.e**(1j*(torch.pi + torch.angle(act[:,0,:])))
     act = torch.reshape(act,s)
 
-    # return act
+    return act
 
 if __name__ == "__main__":
     from Solvers import wgs
