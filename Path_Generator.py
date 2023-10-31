@@ -3,7 +3,7 @@ import json
 import sys
 import itertools
 
-from Utilities import device, propagate, create_points, do_NCNN, get_convert_indexes
+from Utilities import device, propagate, create_points, do_NCNN, get_convert_indexes, add_lev_sig
 from Solvers import wgs_wrapper, gspat_wrapper, naive_solver_wrapper
 
 
@@ -69,12 +69,14 @@ if __name__ == "__main__":
     for start,end in zip(a,b):
         start = torch.tensor(start) / scale
         end = torch.tensor(end) / scale
-        start = start.T.unsqueeze_(0)
-        end = end.T.unsqueeze_(0)
+        start = start.T.unsqueeze_(0).to(device)
+        end = end.T.unsqueeze_(0).to(device)
 
         positions = interpolate(start,end,step_size)
         for points in positions:
             act = solver[method](points)
+            print(torch.abs(propagate(act,points)))
+            act = add_lev_sig(act)
             rows.append(torch.angle(act).squeeze_())
             
     num_frames = len(rows)

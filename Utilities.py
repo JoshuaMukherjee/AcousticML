@@ -1,7 +1,8 @@
-import torch, math
+import torch, math, sys
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = device if '-cpu' not in sys.argv else 'cpu'
 
 def create_board(N, z):  
     #Written by Giorgos Christopoulos, 2022
@@ -95,6 +96,7 @@ def convert_pats(board):
     return board
 
 def get_convert_indexes():
+     #Invert with _,INVIDX = torch.sort(IDX)
     
     board = transducers()
     board[512//2:,0] = torch.flipud(board[512//2:,0]);
@@ -106,8 +108,6 @@ def get_convert_indexes():
         for b,row_b in enumerate(transducers()):
             if torch.all(row == row_b):
                 indexes.append(b)
-
-
     indexes = torch.as_tensor(indexes)
 
 
@@ -169,11 +169,7 @@ def add_lev_sig(activation):
     act[:,0,:] = torch.e**(1j*(torch.pi + torch.angle(act[:,0,:])))
     act = torch.reshape(act,s)
 
-    return act
-
-   
- 
-
+    # return act
 
 if __name__ == "__main__":
     from Solvers import wgs
@@ -192,7 +188,6 @@ if __name__ == "__main__":
 
 
     '''
-
     from torch.utils.data import DataLoader 
     from Dataset import NaiveDataset
     from Loss_Functions import mse_loss
@@ -213,7 +208,6 @@ if __name__ == "__main__":
         print(torch.abs(field))
 
     '''
-
 
     '''
     trans_pos(:,2) = flipud(trans_pos(:,2));   

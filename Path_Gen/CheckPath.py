@@ -7,13 +7,13 @@ import matplotlib
 import matplotlib.animation as animation
 
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 
 p = os.path.abspath('.')
 sys.path.insert(1, p)
 
-from Utilities import get_convert_indexes, propagate
+from Utilities import get_convert_indexes, propagate, device, add_lev_sig
 from Path_Generator import interpolate
 from Gorkov import gorkov_autograd
 
@@ -23,6 +23,7 @@ model_name = sys.argv[2]
 step_size = 0.0001
 
 IDX = get_convert_indexes()
+_,INVIDX = torch.sort(IDX)
 
 path_params  = json.load(open("Path_Gen/Paths/"+path_file+".json","r"))
 output_f = open("Path_gen/Outputs/"+path_file+model_name+".csv","r")
@@ -37,8 +38,8 @@ positions = []
 for start,end in zip(a,b):
     start = torch.tensor(start) / scale
     end = torch.tensor(end) / scale
-    start = start.T.unsqueeze_(0)
-    end = end.T.unsqueeze_(0)
+    start = start.T.unsqueeze_(0).to(device)
+    end = end.T.unsqueeze_(0).to(device)
     N = start.shape[2]
 
     pos = interpolate(start,end,step_size)
@@ -48,8 +49,9 @@ for start,end in zip(a,b):
 phase_rows = []
 for line in output_f.readlines()[1:]:
     phases = line.split(",")
-    phases = torch.tensor([float(i) for i in phases])[IDX]
-    activation_out = torch.e** (1j*(torch.reshape(phases,(1,512,1))))
+    phases = torch.tensor([float(i) for i in phases])[INVIDX]
+    activation_out = torch.e** (1j*(torch.reshape(phases,(1,512,1)))).to(device)
+    activation_out = add_lev_sig(activation_out)
     phase_rows.append(activation_out)
 
 
@@ -66,6 +68,7 @@ if "-p" in sys.argv:
             pressure[j].append(p)
     
     for i,p in enumerate(pressure):
+        p = [j.cpu() for j in p]
         plt.plot(p,label="Point "+str(i))
     
     plt.ylim(bottom=0,top=12000)
