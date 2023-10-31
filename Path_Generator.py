@@ -50,8 +50,6 @@ if __name__ == "__main__":
     frames = path_params["points"]
     scale = {"cm":100,"mm":1000,"m":1}[ path_params["format"]]
 
-    p = create_points(4)
-
 
     solver = {
         "wgs":wgs_wrapper,
