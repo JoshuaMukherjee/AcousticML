@@ -156,7 +156,7 @@ if "-t" in sys.argv:
                                     frames=len(phase_rows) - 1, interval=1)
 
     # plt.show()
-    ani.save("Figs/TransducerPhases/transducers-"+path_file+"-"+model_name+".gif", dpi=300, writer=animation.PillowWriter(fps=1))
+    ani.save("Figs/TransducerPhases/transducers-"+path_file+"-"+model_name+".gif", dpi=300, writer=animation.PillowWriter(fps=25))
     print("Saved to", "Figs/TransducerPhases/transducers-"+path_file+"-"+model_name+".gif")
      
 
