@@ -167,19 +167,19 @@ class NaiveDataset(Dataset):
 if __name__ == "__main__":
     
     length = 600000
-    test_length = 0
-    N = 4
+    test_length = 1000 
+    N = 10
     dataset_type = NaiveDataset
     
 
     
     if length > 0:
             
-        train = dataset_type(length)
+        train = dataset_type(length,N=N)
         torch.save(train,"Datasets/" +train.__class__.__name__ +"Train-"+str(length)+"-"+str(N)+".pth")
 
     if test_length > 0:
-        test = dataset_type(test_length)
+        test = dataset_type(test_length,N=N)
         torch.save(test,"Datasets/" +test.__class__.__name__+"Test-"+str(test_length)+"-"+str(N)+".pth")
     
     i = 0
