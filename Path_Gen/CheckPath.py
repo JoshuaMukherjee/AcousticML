@@ -7,7 +7,7 @@ import matplotlib
 import matplotlib.animation as animation
 
 
-# matplotlib.use("TkAgg")
+matplotlib.use("TkAgg")
 
 
 p = os.path.abspath('.')
@@ -103,9 +103,10 @@ if '-g' in sys.argv:
     Us = []
     for _ in range(N):
         Us.append([])
-    print(Us)
+
     i = 0
     for i,phase in enumerate(phase_rows):
+        phase = add_lev_sig(phase)
         pos = positions[i]
         U = gorkov_autograd(phase,pos).squeeze_()
 
