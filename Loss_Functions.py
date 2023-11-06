@@ -1,5 +1,5 @@
 import torch
-from Gorkov import gorkov_autograd
+from Gorkov import gorkov_autograd, gorkov_fin_diff
 from Utilities import add_lev_sig
 
 def max_loss(pressure, true):
@@ -123,7 +123,26 @@ def gorkov_loss(activation, points):
   activation = add_lev_sig(activation)
   gorkov = gorkov_autograd(activation,points,retain_graph=True)
   return torch.sum(gorkov)
+
+def gorkov_FD_loss(activation, points, axis="XYZ",stepsize = 0.000135156253,K1=None, K2=None):
+  activation = add_lev_sig(activation)
+  U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
+  return torch.sum(U)
+
+def gorkov_FD_mean_loss(activation, points, axis="XYZ",stepsize = 0.000135156253,K1=None, K2=None):
+  activation = add_lev_sig(activation)
+  U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
+  return torch.mean(U)
+
+def gorkov_FD_maxsum_loss(activation, points, axis="XYZ",stepsize = 0.000135156253,K1=None, K2=None):
+  activation = add_lev_sig(activation)
+  U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
+  return torch.sum(torch.max(U,dim=1).values)
   
+def gorkov_FD_maxmean_loss(activation, points, axis="XYZ",stepsize = 0.000135156253,K1=None, K2=None):
+  activation = add_lev_sig(activation)
+  U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
+  return torch.mean(torch.max(U,dim=1).values)
 
 
 if __name__ == "__main__":
