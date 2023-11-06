@@ -250,8 +250,16 @@ if "-v" in sys.argv:
     model = torch.load("Models/model_"+model_name+".pth", map_location=torch.device(device))
     N = 4
     P = 1
-    dataset = NaiveDataset(P,N)
+
+    if "-overfit" not in sys.argv:
+        dataset = NaiveDataset(P,N)
+        print("Generated data...")
+        
+    else:
+        dataset = torch.load("./Datasets/NaiveDataset"+norm+"Train-4-4.pth")
+    
     data = iter(DataLoader(dataset,1,shuffle=True))
+
     results = []
 
     x_left = -0.08
@@ -272,8 +280,8 @@ if "-v" in sys.argv:
     trans = []
 
     # print(trans_x)
-
-    for points,a,pr,naive in data:
+    d = next(data)
+    for points,a,pr,naive in [d]:
         print(points)
         out = do_NCNN(model,points)
         activation = add_lev_sig(out)
