@@ -1,0 +1,23 @@
+{
+    "net":"CNN",
+    "net-args":{
+        "layers":[32,128,128,128,128,128,128,128,64,2],
+        "channels_in":2,
+        "conv_args":{
+            "kernel_size":3,
+            "padding":"same"
+        },
+        "activation":"ReLU",
+        "norm":"BatchNorm2d"
+    },
+    "start-epochs":0,
+    "epochs":200,
+    "train":["NaiveDatasetTrain-4-4.pth"],
+    "test":["NaiveDatasetTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-2},
+    "loss-function":"gorkov_FD_loss",
+    "train-function":"train_naive_hologram_points",
+    "supervised":false,
+    "batch":32
+}
