@@ -444,7 +444,7 @@ def train_naive_hologram_points(net, params):
             running += loss.item()
             if not test:
                 optimiser.zero_grad()    
-                loss.backward(retain_graph = True)
+                loss.backward()
                 optimiser.step()
                    
 
