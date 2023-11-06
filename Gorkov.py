@@ -42,22 +42,23 @@ def get_finite_diff_points(points, axis, stepsize = 0.000135156253):
     #points = Bx3x4
     points_h = points.clone()
     points_neg_h = points.clone()
-    points_h[:,axis,:] = points[:,axis,:] + stepsize
-    points_neg_h[:,axis,:] = points[:,axis,:] - stepsize
+    points_h[:,axis,:] = points_h[:,axis,:] + stepsize
+    points_neg_h[:,axis,:] = points_neg_h[:,axis,:] - stepsize
 
     return points_h, points_neg_h
 
 
 def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K1=None, K2=None):
+    torch.autograd.set_detect_anomaly(True)
     B = points.shape[0]
     D = len(axis)
     N = points.shape[2]
     fin_diff_points=  torch.zeros((B,3,((2*D)+1)*N)).to(device)
-    fin_diff_points[:,:,:N] = 0
+    fin_diff_points[:,:,:N] = points.clone()
     
     
     if len(activations.shape) < 3:
-        activations.unsqueeze_(0)    
+        activations = torch.unsqueeze(activations,0).clone()
 
     i = 2
     if "X" in axis:
@@ -80,10 +81,11 @@ def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K
         fin_diff_points[:,:,D*N+(i-1)*N:D*N+i*N] = points_neg_h
         i += 1
 
+
     pressure_points = propagate(activations, fin_diff_points)
-    
-    pressure = pressure_points[:N]
-    pressure_fin_diff = pressure_points[N:]
+
+    pressure = pressure_points[:,:N]
+    pressure_fin_diff = pressure_points[:,N:]
 
     split = torch.reshape(pressure_fin_diff,(B,2, ((2*D))*N // 2))
     
@@ -112,18 +114,21 @@ if __name__ == "__main__":
     from Solvers import wgs
 
     N =4
-    points=  create_points(N,B=1)
+    B=2
+    points=  create_points(N,B=B)
     print(points)
-    A = forward_model(points[0,:])
-    _, _, x = wgs(A,torch.ones(N,1).to(device)+0j,200)
-    
-    x.unsqueeze_(0)    
+    xs = torch.zeros((B,512,1)) +0j
+    for i in range(B):
+        A = forward_model(points[i,:])
+        _, _, x = wgs(A,torch.ones(N,1).to(device)+0j,200)
+        xs[i,:] = x
 
-    x = add_lev_sig(x)
 
-    gorkov_AG = gorkov_autograd(x,points)
+    xs = add_lev_sig(xs)
+
+    gorkov_AG = gorkov_autograd(xs,points)
     print(gorkov_AG)
 
-    gorkov_FD = gorkov_fin_diff(x,points,axis="Z")
+    gorkov_FD = gorkov_fin_diff(xs,points,axis="Z")
     print(gorkov_FD)
 # 
