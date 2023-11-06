@@ -53,66 +53,43 @@ def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K
     D = len(axis)
     N = points.shape[2]
     fin_diff_points=  torch.zeros((B,3,((2*D)+1)*N)).to(device)
-    fin_diff_points[:,:,:N] = points
+    fin_diff_points[:,:,:N] = 0
     
-    i = 2
     
     if len(activations.shape) < 3:
         activations.unsqueeze_(0)    
-
-    # if "X" in axis:
-    #     points_h, points_neg_h = get_finite_diff_points(points, 0, stepsize)
-    #     fin_diff_points[:,:,N:i*N] = points_h
-    #     fin_diff_points[:,:,i*N + ((N-1)*D)-1 : (i+1)*N +((N-1)*D)-1] = points_neg_h
-    #     i = i+1
-    
-    
-    # if "Y" in axis:
-    #     points_h, points_neg_h = get_finite_diff_points(points, 1, stepsize)
-        
-
-    #     fin_diff_points[:,:,(i-1)*N:(i)*N] = points_h
-    #     fin_diff_points[:,:,(i)*N +((N-1)*D)-1 :(i+1)*N +((N-1)*D)-1] = points_neg_h
-    #     i = i+1
-
-
-    # if "Z" in axis:
-    #     points_h, points_neg_h = get_finite_diff_points(points, 2, stepsize)
-    #     fin_diff_points[:,:,(i-1)*N:(i)*N] = points_h
-
-    #     fin_diff_points[:,:,(i)*N +((N-1)*D)-1 :(i+1)*N +((N-1)*D)-1] = points_neg_h
 
     i = 2
     if "X" in axis:
         points_h, points_neg_h = get_finite_diff_points(points, 0, stepsize)
         fin_diff_points[:,:,N:i*N] = points_h
+        fin_diff_points[:,:,D*N+(i-1)*N:D*N+i*N] = points_neg_h
+
         i += 1
+
     
     if "Y" in axis:
         points_h, points_neg_h = get_finite_diff_points(points, 1, stepsize)
-        fin_diff_points[:,:,N:i*N] = points_h
+        fin_diff_points[:,:,(i-1)*N:i*N] = points_h
+        fin_diff_points[:,:,D*N+(i-1)*N:D*N+i*N] = points_neg_h
         i += 1
     
     if "Z" in axis:
         points_h, points_neg_h = get_finite_diff_points(points, 2, stepsize)
-        fin_diff_points[:,:,N:i*N] = points_h
+        fin_diff_points[:,:,(i-1)*N:i*N] = points_h
+        fin_diff_points[:,:,D*N+(i-1)*N:D*N+i*N] = points_neg_h
         i += 1
-    
-    print(fin_diff_points)
-    exit()
 
-    
-   
     pressure_points = propagate(activations, fin_diff_points)
     
     pressure = pressure_points[:N]
     pressure_fin_diff = pressure_points[N:]
-    split = torch.reshape(pressure_fin_diff,(B,2, ((2*D))*N // 2))
 
+    split = torch.reshape(pressure_fin_diff,(B,2, ((2*D))*N // 2))
     
     grad = (split[:,0,:] - split[:,1,:]) / (2*stepsize)
     
-    grad = torch.reshape(grad,(B,3,N))
+    grad = torch.reshape(grad,(B,D,N))
     grad_abs_square = torch.pow(torch.abs(grad),2)
     grad_term = torch.sum(grad_abs_square,dim=1)
     
@@ -144,9 +121,9 @@ if __name__ == "__main__":
 
     x = add_lev_sig(x)
 
-    # gorkov_AG = gorkov_autograd(x,points)
-    # print(gorkov_AG)
+    gorkov_AG = gorkov_autograd(x,points)
+    print(gorkov_AG)
 
-    gorkov_FD = gorkov_fin_diff(x,points,axis="XZ")
+    gorkov_FD = gorkov_fin_diff(x,points,axis="Z")
     print(gorkov_FD)
 # 
