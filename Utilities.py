@@ -160,16 +160,20 @@ def create_points(N,B=1,x=None,y=None,z=None, min_pos=-0.06, max_pos = 0.06):
     
 
 def add_lev_sig(activation):
-    act = torch.clone(activation)
-    s = activation.shape
+    act = activation.clone()
+
+    s = act.shape
     B = s[0]
 
     act = torch.reshape(act,(B,2, 256))
 
-    act[:,0,:] = torch.e**(1j*(torch.pi + torch.angle(act[:,0,:])))
+    act[:,0,:] = torch.e**(1j*(torch.pi + torch.angle(act[:,0,:].clone())))
     act = torch.reshape(act,s)
 
     return act
+
+
+
 
 if __name__ == "__main__":
     from Solvers import wgs
