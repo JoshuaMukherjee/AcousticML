@@ -148,7 +148,7 @@ if "-t" in sys.argv:
 if "-h" in sys.argv:
     model_name = sys.argv[1]
 
-    model = torch.load("Models/model_"+model_name+".pth")
+    model = torch.load("Models/model_"+model_name+".pth",map_location=torch.device(device))
 
     P = 100
     N = 4
