@@ -1,16 +1,7 @@
 {
     "net":"CNN",
-    "net-args":{
-        "layers":[32,128,128,128,128,128,128,128,64,2],
-        "channels_in":2,
-        "conv_args":{
-            "kernel_size":3,
-            "padding":"same"
-        },
-        "activation":"ReLU",
-        "norm":"BatchNorm2d"
-    },
-    "start-epochs":0,
+    "start_model":"NCNN30",
+    "start-epochs":50,
     "epochs":50,
     "train":["NaiveDatasetTrain-600000-4.pth"],
     "test":["NaiveDatasetTest-1000-4.pth"],
