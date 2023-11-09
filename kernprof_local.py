@@ -106,7 +106,8 @@ try:
     from cProfile import Profile
 except ImportError:
     try:
-        from lsprof import Profile
+        # from lsprof import Profile
+        pass
     except ImportError:
         from profile import Profile
 
