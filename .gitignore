@@ -6,3 +6,5 @@ Models/*
 Figs/*
 *.ipynb
 Path_Gen/Outputs/*
+*.lprof
+*.prof
