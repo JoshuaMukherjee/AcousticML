@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import Dataset
-from Utilities import *
+from Utilities import forward_model, transducers, device
 from Solvers import wgs, naive_solver
 
 

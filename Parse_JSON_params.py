@@ -4,7 +4,6 @@ import traceback
 import torch
 from torch.utils.data import DataLoader
 
-
 from Train_Network import train
 import Networks, Loss_Functions
 from Utilities import device
@@ -14,9 +13,8 @@ import Network_Train_Functions
 
 
 files = [
-   "NCNN41"
+   "NCNN43"
 ]
-
 
 def parse(params,name):
 

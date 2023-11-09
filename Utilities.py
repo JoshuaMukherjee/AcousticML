@@ -1,8 +1,15 @@
 import torch, math, sys
 
 
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
 device = device if '-cpu' not in sys.argv else 'cpu'
+
+# import line_profiler
+# profile = line_profiler.LineProfiler()
+
 
 def create_board(N, z):  
     #Written by Giorgos Christopoulos, 2022
@@ -13,7 +20,7 @@ def create_board(N, z):
     y= y.to(device)
     trans_x=torch.reshape(x,(torch.numel(x),1))
     trans_y=torch.reshape(y,(torch.numel(y),1))
-    trans_z=z*torch.ones((torch.numel(x),1))
+    trans_z=z*torch.ones((torch.numel(x),1)).to(device)
     trans_pos=torch.cat((trans_x, trans_y, trans_z), axis=1)
     return trans_pos
   
@@ -23,7 +30,7 @@ def transducers():
 
 TRANSDUCERS = transducers()
 
-@profile
+
 def forward_model(points, transducers = TRANSDUCERS):
     #Written by Giorgos Christopoulos, 2022
     m=points.size()[1]
@@ -51,20 +58,21 @@ def forward_model(points, transducers = TRANSDUCERS):
 
     directivity=1/2-torch.pow(bessel_arg,2)/16+torch.pow(bessel_arg,4)/384
     
-    phase=torch.exp(1j*k*distance)
+    p = 1j*k*distance
+    phase = torch.e**(p)
     
     trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
     return trans_matrix
 
 
-@profile
+
 def propagate(activations, points):
     out = []
     B = activations.shape[0]
     N = points.shape[2]
     out = torch.zeros((B,N,1)).to(device) +1j
     for i in range(B):
-        A = forward_model(points[i]).to(device)
+        A = forward_model(points[i])
 
         out[i,:] = A@activations[i]
 
@@ -176,9 +184,9 @@ def create_points(N,B=1,x=None,y=None,z=None, min_pos=-0.06, max_pos = 0.06):
 
     return points
     
-
+# @profile
 def add_lev_sig(activation):
-    act = activation.clone()
+    act = activation.clone().to(device)
 
     s = act.shape
     B = s[0]

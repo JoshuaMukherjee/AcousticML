@@ -138,7 +138,7 @@ def gorkov_FD_maxsum_loss(activation, points, axis="XYZ",stepsize = 0.0001351562
   activation = add_lev_sig(activation)
   U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
   return torch.sum(torch.max(U,dim=1).values)
-  
+
 def gorkov_FD_maxmean_loss(activation, points, axis="XYZ",stepsize = 0.000135156253,K1=None, K2=None):
   activation = add_lev_sig(activation)
   U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)

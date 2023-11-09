@@ -403,7 +403,6 @@ def train_naive_holograam(net, params):
     
     return running, {}
 
-
 def train_naive_hologram_points(net, params):
 
     optimiser = params["optimiser"]

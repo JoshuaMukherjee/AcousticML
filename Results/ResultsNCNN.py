@@ -27,6 +27,11 @@ if "-normD" in sys.argv: #Use a normalised dataset
 else:
     norm = ""
 
+if "-8" in sys.argv:
+    N = 8
+else:
+    N=4
+
 
 if "-l" in sys.argv:
 
@@ -64,7 +69,6 @@ if "-p" in sys.argv:
 
     model = torch.load("Models/model_"+model_name+latest+".pth", map_location=torch.device(device))
 
-    N = 4
     P = 5
     if "-overfit" not in sys.argv:
         dataset = NaiveDataset(P,N)
@@ -151,7 +155,6 @@ if "-h" in sys.argv:
     model = torch.load("Models/model_"+model_name+".pth",map_location=torch.device(device))
 
     P = 100
-    N = 4
     dataset = NaiveDataset(P,N)
     data = iter(DataLoader(dataset,1,shuffle=True))
     pressure_means = []
@@ -190,7 +193,6 @@ if "-r" in sys.argv:
     model = torch.load("Models/model_"+model_name+".pth")
 
     P = 100
-    N = 4
     dataset = NaiveDataset(P,N)
     data = iter(DataLoader(dataset,1,shuffle=True))
     pressure_std = []
@@ -341,7 +343,6 @@ if "-g" in sys.argv:
 
     model = torch.load("Models/model_"+model_name+latest+".pth", map_location=torch.device(device))
 
-    N = 4
     P = 5
     if "-overfit" not in sys.argv:
         dataset = NaiveDataset(P,N)
