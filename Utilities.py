@@ -68,15 +68,12 @@ def forward_model(points, transducers = TRANSDUCERS):
 
 def propagate(activations, points):
     out = []
-    B = activations.shape[0]
-    N = points.shape[2]
-    out = torch.zeros((B,N,1)).to(device) +1j
-    for i in range(B):
-        A = forward_model(points[i])
-
-        out[i,:] = A@activations[i]
-
-    return out.squeeze_()
+    for i in range(activations.shape[0]):
+        A = forward_model(points[i]).to(device)
+       
+        out.append(A@activations[i])
+    out = torch.stack(out,0)
+    return out.squeeze()
 
 def propagate_abs(activations, points):
     out = propagate(activations, points)
