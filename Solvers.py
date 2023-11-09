@@ -63,7 +63,7 @@ def gspat_wrapper(points):
 def naive(points):
     activation = torch.ones(points.shape[1]) +0j
     activation = activation.to(device)
-    forward = forward_model(points.T,transducers()).to(device)
+    forward = forward_model(points.T).to(device)
     back = torch.conj(forward).T
     # print(back.device, activation.device)
     trans = back@activation
@@ -72,7 +72,7 @@ def naive(points):
     pressure = torch.abs(out)
     return out, pressure
 
-def naive_solver_batch(points,transd=transducers()):
+def naive_solver_batch(points,transd=TRANSDUCERS):
     outs = []
     trans_phases = []
     for p in points:
@@ -85,7 +85,7 @@ def naive_solver_batch(points,transd=transducers()):
     trans_phase = torch.stack(trans_phases)
     return out, trans_phase
 
-def naive_solver(points,transd=transducers()):
+def naive_solver(points,transd=TRANSDUCERS):
 
     activation = torch.ones(points.shape[1]) +0j
     activation = activation.to(device)

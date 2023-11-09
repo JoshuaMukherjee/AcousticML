@@ -48,6 +48,7 @@ def get_finite_diff_points(points, axis, stepsize = 0.000135156253):
     return points_h, points_neg_h
 
 
+@profile
 def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K1=None, K2=None):
     torch.autograd.set_detect_anomaly(True)
     B = points.shape[0]
@@ -112,23 +113,24 @@ def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K
 if __name__ == "__main__":
     from Utilities import create_points, forward_model
     from Solvers import wgs
+    
+    def run():
+        N =4
+        B=2
+        points=  create_points(N,B=B)
+        print(points)
+        xs = torch.zeros((B,512,1)) +0j
+        for i in range(B):
+            A = forward_model(points[i,:])
+            _, _, x = wgs(A,torch.ones(N,1).to(device)+0j,200)
+            xs[i,:] = x
 
-    N =4
-    B=2
-    points=  create_points(N,B=B)
-    print(points)
-    xs = torch.zeros((B,512,1)) +0j
-    for i in range(B):
-        A = forward_model(points[i,:])
-        _, _, x = wgs(A,torch.ones(N,1).to(device)+0j,200)
-        xs[i,:] = x
 
+        xs = add_lev_sig(xs)
 
-    xs = add_lev_sig(xs)
+        gorkov_AG = gorkov_autograd(xs,points)
+        print(gorkov_AG)
 
-    gorkov_AG = gorkov_autograd(xs,points)
-    print(gorkov_AG)
-
-    gorkov_FD = gorkov_fin_diff(xs,points,axis="Z")
-    print(gorkov_FD)
-# 
+        gorkov_FD = gorkov_fin_diff(xs,points,axis="XYZ")
+        print(gorkov_FD)
+    run()

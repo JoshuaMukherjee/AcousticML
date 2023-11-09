@@ -7,8 +7,10 @@ device = device if '-cpu' not in sys.argv else 'cpu'
 def create_board(N, z):  
     #Written by Giorgos Christopoulos, 2022
     pitch=0.0105
-    grid_vec=pitch*(torch.arange(-N/2+1, N/2, 1))
+    grid_vec=pitch*(torch.arange(-N/2+1, N/2, 1)).to(device)
     x, y = torch.meshgrid(grid_vec,grid_vec,indexing="ij")
+    x = x.to(device)
+    y= y.to(device)
     trans_x=torch.reshape(x,(torch.numel(x),1))
     trans_y=torch.reshape(y,(torch.numel(y),1))
     trans_z=z*torch.ones((torch.numel(x),1))
@@ -19,38 +21,54 @@ def transducers():
     #Written by Giorgos Christopoulos, 2022
   return torch.cat((create_board(17,.234/2),create_board(17,-.234/2)),axis=0).to(device)
 
-def forward_model(points, transducers = transducers()):
+TRANSDUCERS = transducers()
+
+@profile
+def forward_model(points, transducers = TRANSDUCERS):
     #Written by Giorgos Christopoulos, 2022
     m=points.size()[1]
     n=transducers.size()[0]
     k=2*math.pi/0.00865
     radius=0.005
+    
     transducers_x=torch.reshape(transducers[:,0],(n,1))
     transducers_y=torch.reshape(transducers[:,1],(n,1))
     transducers_z=torch.reshape(transducers[:,2],(n,1))
+
+
     points_x=torch.reshape(points[0,:],(m,1))
     points_y=torch.reshape(points[1,:],(m,1))
     points_z=torch.reshape(points[2,:],(m,1))
     
+    dx = (transducers_x.T-points_x) **2
+    dy = (transducers_y.T-points_y) **2
+    dz = (transducers_z.T-points_z) **2
 
-    distance=torch.sqrt((transducers_x.T-points_x)**2+(transducers_y.T-points_y)**2+(transducers_z.T-points_z)**2)
-    planar_distance=torch.sqrt((transducers_x.T-points_x)**2+(transducers_y.T-points_y)**2)
+    distance=torch.sqrt(dx+dy+dz)
+    planar_distance=torch.sqrt(dx+dy)
+
     bessel_arg=k*radius*torch.divide(planar_distance,distance)
-    directivity=1/2-bessel_arg**2/16+bessel_arg**4/384
+
+    directivity=1/2-torch.pow(bessel_arg,2)/16+torch.pow(bessel_arg,4)/384
+    
     phase=torch.exp(1j*k*distance)
+    
     trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
-    return trans_matrix.to(device)
+    return trans_matrix
 
 
+@profile
 def propagate(activations, points):
     out = []
-    for i in range(activations.shape[0]):
+    B = activations.shape[0]
+    N = points.shape[2]
+    out = torch.zeros((B,N,1)).to(device) +1j
+    for i in range(B):
         A = forward_model(points[i]).to(device)
 
+        out[i,:] = A@activations[i]
 
-        out.append(A@activations[i])
-    out = torch.stack(out,0)
-    return out.squeeze()
+    return out.squeeze_()
 
 def propagate_abs(activations, points):
     out = propagate(activations, points)
