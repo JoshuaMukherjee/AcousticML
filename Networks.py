@@ -233,7 +233,6 @@ class MLP(Module):
             
     def forward(self,x):
         out = x
-        # print()
         for layer in self.layers:
             out = layer(out)
         return out
@@ -466,8 +465,6 @@ class F_CNN(Module):
 
         return out
 
-
-
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
@@ -530,48 +527,95 @@ class UNET(nn.Module):
         
         return self.final_conv(x)
 
+class MultiInputCNN(nn.Module):
+    def __init__ (self, CNN_args, MLP_vector_args, MLP_feature_args, vec_size=None, output_complex = True):
+        super(MultiInputCNN, self).__init__()
+        self.cnn = CNN(**CNN_args)
+        self.vector_mlp = MLP(**MLP_vector_args)
+        self.feature_mlp = MLP(**MLP_feature_args)
+        if vec_size is None:
+            self.vec_size = 512
+        else:
+            self.vec_size = vec_size
+        
+        self.output_complex = output_complex
+
+    
+    def forward(self, img, vec ):
+        img_out = self.cnn(img)
+        B = img_out.shape[0]
+        C = img_out.shape[1] #Should always be 2 but may as well allow for more
+        H = img_out.shape[2] #H=W=16 normally but allows for changes, does assume H=W
+        img_vec = torch.reshape(img_out, (B, self.vec_size))
+
+        vec = torch.squeeze(vec)
+        vec_feat = self.vector_mlp(vec)
+
+        features = torch.concat([img_vec,vec_feat],dim=1 )
+
+        feat_out = self.feature_mlp(features)
+
+        img_out = torch.reshape(feat_out, (B,C,H,H))
+
+        if self.output_complex:
+            activation_out = torch.e** (1j*(img_out))
+            return activation_out
+
+        return img_out
 
 
 if __name__ == "__main__":
 
-    from Utilities import forward_model, transducers
-    from Solvers import wgs
+    from Utilities import forward_model, transducers, create_points, propagate
+    from Solvers import wgs, wgs_wrapper
 
     B = 2
-    C = 4
+    N = 4
 
-    points1 = torch.FloatTensor(3,4).uniform_(-.06,.06).to(device)
-    A1=forward_model(points1, transducers()).to(device).unsqueeze_(0)
-    points2 = torch.FloatTensor(3,4).uniform_(-.06,.06).to(device)
-    A2=forward_model(points2, transducers()).to(device).unsqueeze_(0)
-    
+    points = create_points(N,B)
+    out = wgs_wrapper(points)
+    phases = torch.angle(torch.reshape(out,(B,2,16,16)))
+    targets = torch.FloatTensor(B, N,1).uniform_(0,1e-4).to(device)
 
-    in_A = torch.concat((A1,A2),0) #add batch
-    # print(A[0,:,0:6])
-
-
-    layers = [4,10,10,10,2]
-    args = {
-        "kernel_size":3,
-        "padding":"same"
-    }
-
-    F_cnn_args = {
-        "layers":layers,
-        "channels_in":C,
-        "conv_args":args,
+    CNN_args = {
+        "layers":[32,64,2],
+        "channels_in":2,
+        "conv_args":{
+            "kernel_size":3,
+            "padding":"same"
+        },
         "activation":"ReLU",
         "norm":"BatchNorm2d"
     }
 
-    F_cnn = F_CNN(F_cnn_args)
-    out = F_cnn(in_A)
-    # print(out.shape)
-    # _, _, x = wgs(A1,torch.ones(4,1).to(device)+0j,200)
-    # print(x.shape)
+    MLP_vec_args = {
+        "layers":[32,128,256,512],
+        "input_size":4,
+        "activation":torch.nn.ReLU,
+        "batch_norm":torch.nn.BatchNorm1d
+    }
 
-    # p_wgs = A1@x
-    # print(torch.abs(p_wgs).shape)
-    p_cnn = in_A@out
-    print(torch.abs(p_cnn))
+    MLP_feat_args = {
+        "layers":[512,512],
+        "input_size":1024,
+        "activation":torch.nn.ReLU,
+        "batch_norm":torch.nn.BatchNorm1d
+    }
+
+    # CNN_img = CNN(**CNN_args)
+    # cnn_out = CNN_img(phases)
+    # MLP_vec = MLP(**MLP_vec_args)
+    # img_vec = torch.reshape(cnn_out, (B, 512))
+    # MLP_vec(img_vec)
+
+    mCNN = MultiInputCNN(CNN_args, MLP_vec_args, MLP_feat_args)
     
+    out = mCNN(phases, targets)
+    out = torch.reshape(out,(B,512,1))
+    print(torch.abs(propagate(out,points)))
+    print(out.shape)
+
+
+
+
+
