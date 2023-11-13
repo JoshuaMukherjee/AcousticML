@@ -259,8 +259,6 @@ if __name__ == "__main__":
             i += 1
     
     else:
-        to_convert = "./Datasets/NaiveDatasetTrain-4-4.pth"
-
         if length > 0:
             convert_naive_to_PTD_dataset("Datasets/" +"NaiveDataset" +"Train-"+str(length)+"-"+str(N)+".pth",
                                          "Datasets/" +"PressureTargetDataset" +"Train-"+str(length)+"-"+str(N)+".pth",N)
