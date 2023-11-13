@@ -36,8 +36,8 @@ else:
 
 if "-l" in sys.argv:
 
-    TRAINSIZE = 4
-    TESTSIZE=2
+    TRAINSIZE = 100000
+    TESTSIZE=1000
 
     model_name = sys.argv[1]
 
@@ -111,6 +111,6 @@ if "-sp" in sys.argv:
 
     x_lin = np.linspace(4000,11000)
     plt.plot(xs, p(xs), "r-",label="Trend Line, m="+str(round(z[0],2))+", c="+str(round(z[1],0)))
-    # plt.plot(xs, xs, "b-", label="y=x")
+    plt.plot(xs, xs, "b-", label="target=output")
     plt.legend()
     plt.show()
