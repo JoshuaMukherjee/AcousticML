@@ -195,7 +195,13 @@ def add_lev_sig(activation):
 
     return act
 
+def generate_gorkov_targets(N,B=1, max_val=0, min_val=-1e-4):
+    targets = torch.FloatTensor(B, N,1).uniform_(min_val,max_val).to(device)
+    return targets
 
+def generate_pressure_targets(N,B=1, max_val=10000, min_val=7000):
+    targets = torch.FloatTensor(B, N,1).uniform_(min_val,max_val).to(device)
+    return targets
 
 
 if __name__ == "__main__":
