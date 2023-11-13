@@ -156,6 +156,8 @@ def gorkov_target_l1(activation_out,points, targets, axis="XYZ",stepsize = 0.000
   U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
   return l1Loss(targets, U)
 
+def MQuartError(target, output):
+  return torch.sum(torch.pow(target - output,4))
 
 if __name__ == "__main__":
   output = torch.Tensor([[9000,9000,3000,4000],[1000,8000,1000,4000]])
