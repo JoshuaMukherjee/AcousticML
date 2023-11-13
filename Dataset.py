@@ -208,28 +208,64 @@ class PressureTargetDataset(Dataset):
          '''
          return self.points[i],self.activations[i],self.pressures[i], self.naive_acts[i], self.targets[i]
 
+def convert_naive_to_PTD_dataset(dataset_in_path,name,N=4):
+    '''
+    Converts a ```NaiveDataset``` to a ```PressureTargetDataset```
+    '''
+
+    to_convert = torch.load(dataset_in_path)
+    print(len(to_convert[0]))
+
+    dataset = PressureTargetDataset(0,N)
+    for points, activations, pressures, naive_act in to_convert:
+       dataset.points.append(points)
+       dataset.activations.append(activations)
+       dataset.pressures.append(pressures)
+       dataset.naive_acts.append(naive_act)
+       targets = torch.FloatTensor(N).uniform_(6000,10000).to(device)
+       dataset.targets.append(targets)
+    
+    dataset.length = to_convert.length
+
+    torch.save(dataset,name)
+
 
 
 if __name__ == "__main__":
-    
-    length = 100000
+
+    CREATE_DATASET = False
+
+    length = 600000
     test_length = 1000 
     N = 4
-    dataset_type = PressureTargetDataset
     
+    if CREATE_DATASET:
+        dataset_type = PressureTargetDataset
+        
 
+        
+        if length > 0:
+                
+            train = dataset_type(length,N=N)
+            torch.save(train,"Datasets/" +train.__class__.__name__ +"Train-"+str(length)+"-"+str(N)+".pth")
+
+        if test_length > 0:
+            test = dataset_type(test_length,N=N)
+            torch.save(test,"Datasets/" +test.__class__.__name__+"Test-"+str(test_length)+"-"+str(N)+".pth")
+        
+        i = 0
+        for x in train:
+            print(i)
+            i += 1
     
-    if length > 0:
-            
-        train = dataset_type(length,N=N)
-        torch.save(train,"Datasets/" +train.__class__.__name__ +"Train-"+str(length)+"-"+str(N)+".pth")
+    else:
+        to_convert = "./Datasets/NaiveDatasetTrain-4-4.pth"
 
-    if test_length > 0:
-        test = dataset_type(test_length,N=N)
-        torch.save(test,"Datasets/" +test.__class__.__name__+"Test-"+str(test_length)+"-"+str(N)+".pth")
-    
-    i = 0
-    for x in train:
-        print(i)
-        i += 1
-
+        if length > 0:
+            convert_naive_to_PTD_dataset("Datasets/" +"NaiveDataset" +"Train-"+str(length)+"-"+str(N)+".pth",
+                                         "Datasets/" +"PressureTargetDataset" +"Train-"+str(length)+"-"+str(N)+".pth",N)
+        
+        if test_length > 0:
+            convert_naive_to_PTD_dataset("Datasets/" +"NaiveDataset" +"Test-"+str(test_length)+"-"+str(N)+".pth",
+                                         "Datasets/" +"PressureTargetDataset" +"Test-"+str(test_length)+"-"+str(N)+".pth",N)
+        
