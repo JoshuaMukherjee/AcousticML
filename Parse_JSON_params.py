@@ -7,13 +7,13 @@ from torch.utils.data import DataLoader
 from Train_Network import train
 import Networks, Loss_Functions
 from Utilities import device
-from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset
+from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset, PressureTargetDataset
 import Extra_Point_Functions
 import Network_Train_Functions
 
 
 files = [
-   "NCNN45","NCNN46"
+   "mCNN13"
 ]
 
 def parse(params,name):
@@ -101,13 +101,17 @@ def parse(params,name):
         train_function = Network_Train_Functions.default_functions[params["net"]]
         
 
+    if "solver" in params:
+        solver = params["solver"]
+    else:
+        solver = "wgs"
 
     
     train(net,start_epochs,epochs,train_sets,test_sets,optimiser,
         loss_function,loss_params, supervised, scheduler, 
         name, batch, rand_stop, clip, clip_params, log_grad,
         norm_loss, extra_points_fun, extra_points_args, maximise_first_N,
-        train_function)
+        train_function, solver)
 
 if __name__ == '__main__':
     for file in files:
