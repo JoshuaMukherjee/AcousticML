@@ -144,6 +144,18 @@ def gorkov_FD_maxmean_loss(activation, points, axis="XYZ",stepsize = 0.000135156
   U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
   return torch.mean(torch.max(U,dim=1).values)
 
+def gorkov_target_mse(activation_out,points, targets, axis="XYZ",stepsize = 0.000135156253,K1=None, K2=None):
+  activation = add_lev_sig(activation_out)
+  targets = torch.squeeze(targets)
+  U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
+  return mse_loss(targets, U)
+  
+def gorkov_target_l1(activation_out,points, targets, axis="XYZ",stepsize = 0.000135156253,K1=None, K2=None):
+  activation = add_lev_sig(activation_out)
+  targets = torch.squeeze(targets)
+  U = gorkov_fin_diff(activation,points,axis=axis,stepsize=stepsize,K1=K1,K2=K2)
+  return l1Loss(targets, U)
+
 
 if __name__ == "__main__":
   output = torch.Tensor([[9000,9000,3000,4000],[1000,8000,1000,4000]])
