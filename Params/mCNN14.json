@@ -1,0 +1,36 @@
+{
+    "net":"MultiInputCNN",
+    "net-args":{
+        "CNN_args":{
+            "layers":[32,128,128,128,128,128,128,128,128,128,2],
+            "channels_in":2,
+            "conv_args":{
+                "kernel_size":3,
+                "padding":"same"
+            },
+            "activation":"ReLU",
+            "norm":"BatchNorm2d"
+        },
+        "MLP_vector_args":{
+            "layers":[4,8,32],
+            "input_size":4,
+            "activation":"SELU"
+        },
+        "MLP_feature_args":{
+            "layers":[512],
+            "input_size":544,
+            "activation":"SELU"
+        }
+    },
+    "start-epochs":0,
+    "epochs":1000,
+    "train":["PressureTargetDatasetTrain-4-4.pth"],
+    "test":["PressureTargetDatasetTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":5e-3},
+    "loss-function":"mse_loss",
+    "supervised":true,
+    "batch":2,
+    "solver":"wgs",
+    "train-function":"train_pressure_target_mCNN"
+}
