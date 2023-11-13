@@ -36,7 +36,7 @@ else:
 
 if "-l" in sys.argv:
 
-    TRAINSIZE = 100000
+    TRAINSIZE = 600000
     TESTSIZE=1000
 
     model_name = sys.argv[1]
