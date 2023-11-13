@@ -212,8 +212,8 @@ class PressureTargetDataset(Dataset):
 
 if __name__ == "__main__":
     
-    length = 4
-    test_length = 2 
+    length = 100000
+    test_length = 1000 
     N = 4
     dataset_type = PressureTargetDataset
     
