@@ -540,6 +540,7 @@ class MultiInputCNN(nn.Module):
         
         self.output_complex = output_complex
 
+        print(self)
     
     def forward(self, img, vec ):
         img_out = self.cnn(img)
@@ -549,9 +550,12 @@ class MultiInputCNN(nn.Module):
         img_vec = torch.reshape(img_out, (B, self.vec_size))
 
         vec = torch.squeeze(vec)
+        if len(vec.shape)== 1:
+            vec.unsqueeze_(0)
+        
         vec_feat = self.vector_mlp(vec)
 
-        features = torch.concat([img_vec,vec_feat],dim=1 )
+        features = torch.concat([img_vec,vec_feat],dim=1)
 
         feat_out = self.feature_mlp(features)
 
@@ -614,6 +618,9 @@ if __name__ == "__main__":
     out = torch.reshape(out,(B,512,1))
     print(torch.abs(propagate(out,points)))
     print(out.shape)
+
+    print(torch.angle(out))
+    print(torch.abs(out))
 
 
 

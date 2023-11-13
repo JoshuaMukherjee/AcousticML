@@ -29,7 +29,8 @@ def train(net, start_epochs, epochs,
           clip=False, clip_args={}, 
           log_grad =False, norm_loss = False,
           extra_points_fun=None, extra_points_args={}, maximise_first_N =-1, 
-          training_function=None):
+          training_function=None,
+          solver=None):
     
     print(name, "Training....")
     print(device)
@@ -56,7 +57,8 @@ def train(net, start_epochs, epochs,
                 "norm_loss":norm_loss,
                 "extra_point_fun":extra_points_fun,
                 "extra_point_args":extra_points_args,
-                "maximise_first_N":maximise_first_N
+                "maximise_first_N":maximise_first_N,
+                "solver":solver
             }
             running , train_out = training_function(net,training_params)
             #Test
@@ -75,7 +77,8 @@ def train(net, start_epochs, epochs,
                 "norm_loss":norm_loss,
                 "extra_point_fun":extra_points_fun,
                 "extra_point_args":extra_points_args,
-                "maximise_first_N":maximise_first_N
+                "maximise_first_N":maximise_first_N,
+                "solver":solver
             }
             running_test, test_out = training_function(net, test_params)
             
