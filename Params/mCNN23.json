@@ -28,7 +28,7 @@
     "test":["PressureTargetDatasetTest-2-4.pth"],
     "optimiser":"NAdam",
     "optimiser-args":{"lr":1e-2},
-    "loss-function":"MQuartError",
+    "loss-function":"SQuartError",
     "supervised":true,
     "batch":2,
     "solver":"wgs",
