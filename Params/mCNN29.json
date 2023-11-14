@@ -2,7 +2,7 @@
     "net":"MultiInputCNN",
     "net-args":{
         "CNN_args":{
-            "layers":[32,128,128,128,128,128,2],
+            "layers":[32,128,128,128,2],
             "channels_in":2,
             "conv_args":{
                 "kernel_size":3,
@@ -12,13 +12,13 @@
             "norm":"BatchNorm2d"
         },
         "MLP_vector_args":{
-            "layers":[4,64,64,1],
+            "layers":[4,64,128,128],
             "input_size":4,
             "activation":"SELU"
         },
         "MLP_feature_args":{
-            "layers":[512,256,256,256,512],
-            "input_size":513,
+            "layers":[512,128,128,128,512],
+            "input_size":640,
             "activation":"SELU"
         }
     },
@@ -27,15 +27,15 @@
     "train":["PressureTargetDatasetTrain-600000-4.pth"],
     "test":["PressureTargetDatasetTest-1000-4.pth"],
     "optimiser":"NAdam",
-    "optimiser-args":{"lr":1e-3},
+    "optimiser-args":{"lr":1e-4},
     "loss-function":"SQuartError",
     "supervised":true,
     "batch":32,
     "solver":"wgs",
     "train-function":"train_pressure_target_mCNN",
     "scheduler":"CyclicLR",
-    "scheduler-args":{"base_lr":1e-3,
-                        "max_lr":1e-4,
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":1e-3,
                         "step_size_up":10,
                         "cycle_momentum":false
                     }
