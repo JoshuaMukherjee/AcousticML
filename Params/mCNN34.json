@@ -1,0 +1,21 @@
+{
+    "net":"MultiInputCNN",
+    "start_model":"mCNN33",
+    "start-epochs":50,
+    "epochs":150,
+    "train":["PressureTargetDatasetTrain-600000-4.pth"],
+    "test":["PressureTargetDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-4},
+    "loss-function":"mse_loss",
+    "supervised":true,
+    "batch":32,
+    "solver":"wgs",
+    "train-function":"train_pressure_target_mCNN",
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":1e-3,
+                        "step_size_up":10,
+                        "cycle_momentum":false
+                    }
+}

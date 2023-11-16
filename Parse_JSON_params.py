@@ -13,7 +13,7 @@ import Network_Train_Functions
 
 
 files = [
-   "mCNN32"
+   "mCNN35"
 ]
 
 def parse(params,name):
