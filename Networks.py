@@ -576,7 +576,7 @@ class ResNetBlock(nn.Module):
         if batchnorm is not None:
             batchnorm = getattr(torch.nn,batchnorm)
         if activation is not None:
-            activation = getattr(torch.nn,activation)
+            self.activation = getattr(torch.nn,activation)
         
         self.in_layers = torch.nn.ModuleList()
         self.layers = torch.nn.ModuleList()
@@ -587,21 +587,20 @@ class ResNetBlock(nn.Module):
         if batchnorm is not None:
             self.in_layers.append(batchnorm(res_size))
         if activation is not None:
-            self.in_layers.append(activation())
+            self.in_layers.append(self.activation())
 
         for i in range(layers):
             self.layers.append(torch.nn.Linear(res_size,res_size))
             if batchnorm is not None:
                 self.layers.append(batchnorm(res_size))
             if activation is not None:
-                self.layers.append(activation())
+                self.layers.append(self.activation())
         
         self.out_layers.append(torch.nn.Linear(res_size,out_size))
         if batchnorm is not None:
             self.out_layers.append(batchnorm(out_size))
-
-
-
+        if activation is not None:
+            self.out_layers.append(self.activation())
 
 
 
@@ -615,11 +614,13 @@ class ResNetBlock(nn.Module):
 
         for layer in self.layers[0:-2]:
             out = layer(out)
-        out = self.layers[-1](out+res_in)
+
+        out = self.layers[-1](out+res_in) #Last Activation after sum
         
 
         for layer in self.out_layers:
             out = layer(out)
+        
             
         
         return out
