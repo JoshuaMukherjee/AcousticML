@@ -74,6 +74,8 @@ if "-sp" in sys.argv:
     model_name = sys.argv[1]
 
     model = torch.load("Models/model_"+model_name+latest+".pth", map_location=torch.device(device))
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(total_params)
 
     P = 100
     N = 4
