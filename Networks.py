@@ -2,6 +2,7 @@ import torch
 from torch.nn import Module
 import torch.nn as nn
 import torchvision.transforms.functional as TF
+import itertools
 
 '''
 Paszke, A., Gross, S., Massa, F., Lerer, A., Bradbury, J., Chanan, G., … Chintala, S. (2019).
@@ -528,11 +529,12 @@ class UNET(nn.Module):
         return self.final_conv(x)
 
 class MultiInputCNN(nn.Module):
-    def __init__ (self, CNN_args, MLP_vector_args, MLP_feature_args, vec_size=None, output_complex = True):
+    def __init__ (self, CNN_args, MLP_vector_args, MLP_feature_args, vec_size=None, output_complex = True,
+                  CNN_type = "CNN", MLP_vector_type = "MLP", MLP_feature_type="MLP"):
         super(MultiInputCNN, self).__init__()
-        self.cnn = CNN(**CNN_args)
-        self.vector_mlp = MLP(**MLP_vector_args)
-        self.feature_mlp = MLP(**MLP_feature_args)
+        self.cnn = globals()[CNN_type](**CNN_args)
+        self.vector_mlp = globals()[MLP_vector_type](**MLP_vector_args)
+        self.feature_mlp = globals()[MLP_feature_type](**MLP_feature_args)
         if vec_size is None:
             self.vec_size = 512
         else:
@@ -567,6 +569,85 @@ class MultiInputCNN(nn.Module):
 
         return img_out
 
+class ResNetBlock(nn.Module):
+
+    def __init__(self, in_size, out_size, res_size, layers=3, activation = "ReLU", batchnorm=None):
+        super(ResNetBlock, self).__init__()
+        if batchnorm is not None:
+            batchnorm = getattr(torch.nn,batchnorm)
+        if activation is not None:
+            activation = getattr(torch.nn,activation)
+        
+        self.in_layers = torch.nn.ModuleList()
+        self.layers = torch.nn.ModuleList()
+        self.out_layers = torch.nn.ModuleList()
+        
+
+        self.in_layers.append(torch.nn.Linear(in_size,res_size))
+        if batchnorm is not None:
+            self.in_layers.append(batchnorm(res_size))
+        if activation is not None:
+            self.in_layers.append(activation())
+
+        for i in range(layers):
+            self.layers.append(torch.nn.Linear(res_size,res_size))
+            if batchnorm is not None:
+                self.layers.append(batchnorm(res_size))
+            if activation is not None:
+                self.layers.append(activation())
+        
+        self.out_layers.append(torch.nn.Linear(res_size,out_size))
+        if batchnorm is not None:
+            self.out_layers.append(batchnorm(out_size))
+
+
+
+
+
+
+    
+    def forward(self,x):
+        out = x
+        for layer in self.in_layers:
+            out = layer(out)
+        
+        res_in = out
+
+        for layer in self.layers[0:-2]:
+            out = layer(out)
+        out = self.layers[-1](out+res_in)
+        
+
+        for layer in self.out_layers:
+            out = layer(out)
+            
+        
+        return out
+
+
+class ResNet(nn.Module):
+    def __init__(self,layers,input_size, res_sizes, res_block_size = 3, activation = "ReLU", batchnorm=None):
+        super(ResNet, self).__init__()
+        
+        self.blocks = torch.nn.ModuleList()
+
+        layers.insert(0,input_size)
+        a,b = itertools.tee(layers)
+        next(b, None) #Get pairs
+        for i,(start,end) in enumerate(zip(a,b)):
+            b = ResNetBlock(start,end,res_sizes[i],res_block_size,activation,batchnorm)
+            self.blocks.append(b)
+            
+    
+    def forward(self,x):
+        out = x
+        for block in self.blocks:
+            out = block(out)
+        
+        return out
+
+   
+
 
 if __name__ == "__main__":
 
@@ -581,6 +662,14 @@ if __name__ == "__main__":
     phases = torch.angle(torch.reshape(out,(B,2,16,16)))
     targets = torch.FloatTensor(B, N,1).uniform_(0,1e-4).to(device)
 
+    params = {
+        "layers": [16,24,32,512],
+        "input_size" :4,
+        "res_sizes":[32,32,32,64],
+        "batchnorm":"BatchNorm1d"
+
+    }
+
     CNN_args = {
         "layers":[32,64,2],
         "channels_in":2,
@@ -592,12 +681,12 @@ if __name__ == "__main__":
         "norm":"BatchNorm2d"
     }
 
-    MLP_vec_args = {
-        "layers":[32,128,256,512],
-        "input_size":4,
-        "activation":torch.nn.ReLU,
-        "batch_norm":torch.nn.BatchNorm1d
-    }
+    # MLP_vec_args = {
+    #     "layers":[32,128,256,512],
+    #     "input_size":4,
+    #     "activation":torch.nn.ReLU,
+    #     "batch_norm":torch.nn.BatchNorm1d
+    # }
 
     MLP_feat_args = {
         "layers":[512,512],
@@ -612,7 +701,8 @@ if __name__ == "__main__":
     # img_vec = torch.reshape(cnn_out, (B, 512))
     # MLP_vec(img_vec)
 
-    mCNN = MultiInputCNN(CNN_args, MLP_vec_args, MLP_feat_args)
+    mCNN = MultiInputCNN(CNN_args, params, MLP_feat_args,MLP_vector_type="ResNet")
+    print(mCNN)
     
     out = mCNN(phases, targets)
     out = torch.reshape(out,(B,512,1))
@@ -621,8 +711,4 @@ if __name__ == "__main__":
 
     print(torch.angle(out))
     print(torch.abs(out))
-
-
-
-
 
