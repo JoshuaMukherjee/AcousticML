@@ -54,7 +54,7 @@ def forward_model(points, transducers = TRANSDUCERS):
     distance=torch.sqrt(dx+dy+dz)
     planar_distance=torch.sqrt(dx+dy)
 
-    bessel_arg=k*radius*torch.divide(planar_distance,distance)
+    bessel_arg=k*radius*torch.divide(planar_distance,distance) #planar_dist / dist = sin(theta)
 
     directivity=1/2-torch.pow(bessel_arg,2)/16+torch.pow(bessel_arg,4)/384
     
