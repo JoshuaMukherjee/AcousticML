@@ -36,8 +36,13 @@ else:
 
 if "-l" in sys.argv:
 
-    TRAINSIZE = 600000
-    TESTSIZE=1000
+    if "-overfit" not in sys.argv:
+        TRAINSIZE = 600000
+        TESTSIZE=1000
+    else:
+        TRAINSIZE = 4
+        TESTSIZE=2
+    print(TRAINSIZE,TESTSIZE)
 
     model_name = sys.argv[1]
 
