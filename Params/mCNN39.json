@@ -27,19 +27,19 @@
         }
     },
     "start-epochs":0,
-    "epochs":1000,
+    "epochs":50,
     "train":["PressureTargetDatasetTrain-600000-4.pth"],
     "test":["PressureTargetDatasetTest-1000-4.pth"],
     "optimiser":"NAdam",
-    "optimiser-args":{"lr":1e-3},
+    "optimiser-args":{"lr":1e-2},
     "loss-function":"mse_loss",
     "supervised":true,
     "batch":32,
     "solver":"wgs",
     "train-function":"train_pressure_target_mCNN",
     "scheduler":"CyclicLR",
-    "scheduler-args":{"base_lr":1e-3,
-                        "max_lr":5e-3,
+    "scheduler-args":{"base_lr":1e-2,
+                        "max_lr":5e-2,
                         "step_size_up":10,
                         "cycle_momentum":false
                     }
