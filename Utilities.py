@@ -29,6 +29,7 @@ def transducers():
   return torch.cat((create_board(17,.234/2),create_board(17,-.234/2)),axis=0).to(device)
 
 TRANSDUCERS = transducers()
+TOP_BOARD = create_board(17,.234/2)
 
 
 def forward_model(points, transducers = TRANSDUCERS):
