@@ -8,3 +8,4 @@ Figs/*
 Path_Gen/Outputs/*
 *.lprof
 *.prof
+./Media/*
