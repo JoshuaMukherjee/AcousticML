@@ -124,6 +124,7 @@ def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colou
 
     if colour_function_args is None:
         colour_function_args = [{}]*len(colour_functions)
+    
     for i,colour_function in enumerate(colour_functions):
         result = Visualise_single(A,B,C,activation,colour_function, colour_function_args[i], res)
         results.append(result)
