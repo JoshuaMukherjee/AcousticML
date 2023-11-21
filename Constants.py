@@ -7,5 +7,6 @@ p_0 = 1.2
 c_p = 1052
 p_p = 29.36 #From Holographic acoustic elements for manipulation of levitated objects
 f = 40000
-wavelength = 0.0086
+wavelength = 0.00865
 k = 2*pi / wavelength
+radius=0.005
