@@ -1,4 +1,5 @@
 import torch, math, sys
+import Constants
 
 
 
@@ -65,7 +66,31 @@ def forward_model(points, transducers = TRANSDUCERS):
     trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
     return trans_matrix
 
+def forward_model_batched(points, transducers = TRANSDUCERS):
+    B = points.shape[0]
+    N = points.shape[2]
+    M = transducers.shape[0]
+    
+    # p = torch.permute(points,(0,2,1))
+    transducers = torch.unsqueeze(transducers,2)
+    transducers = transducers.expand((B,-1,-1,N))
+    points = torch.unsqueeze(points,1)
+    points = points.expand((-1,M,-1,-1))
 
+    distance_axis = (transducers - points) **2
+    distance = torch.sqrt(torch.sum(distance_axis,dim=2))
+    planar_distance= torch.sqrt(torch.sum(distance_axis[:,:,0:2,:],dim=2))
+    
+    bessel_arg=Constants.k*Constants.radius*torch.divide(planar_distance,distance)
+    directivity=1/2-torch.pow(bessel_arg,2)/16+torch.pow(bessel_arg,4)/384
+    
+    p = 1j*Constants.k*distance
+    phase = torch.e**(p)
+
+    trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
+
+    return trans_matrix.permute((0,2,1))
+    
 
 def propagate(activations, points):
     out = []
@@ -209,6 +234,21 @@ if __name__ == "__main__":
     from Solvers import wgs
     
     points = create_points(4,2)
+
+    A1 = forward_model(points[0,:])
+    _, _, x1 = wgs(A1,torch.ones(4,1).to(device)+0j,200)
+
+    A2 = forward_model(points[1,:])
+    _, _, x2 = wgs(A2,torch.ones(4,1).to(device)+0j,200)
+
+    A = forward_model_batched(points)
+    x = torch.stack([x1,x2])
+    print(A.shape)
+    print(x.shape)
+    print(torch.abs(A@x))
+
+
+    '''
     A = forward_model(points[0,:])
     _, _, x = wgs(A,torch.ones(4,1).to(device)+0j,200)
     x = torch.unsqueeze(x,0)
@@ -221,7 +261,6 @@ if __name__ == "__main__":
     print(torch.abs(pr2))
 
 
-    '''
     from torch.utils.data import DataLoader 
     from Dataset import NaiveDataset
     from Loss_Functions import mse_loss
