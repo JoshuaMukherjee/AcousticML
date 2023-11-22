@@ -51,7 +51,7 @@ def get_finite_diff_points(points, axis, stepsize = 0.000135156253):
     return points_h, points_neg_h
 
 def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K1=None, K2=None):
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
     B = points.shape[0]
     D = len(axis)
     N = points.shape[2]
