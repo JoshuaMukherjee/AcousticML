@@ -92,17 +92,17 @@ def forward_model_batched(points, transducers = TRANSDUCERS):
     return trans_matrix.permute((0,2,1))
     
 
-def propagate(activations, points):
+def propagate(activations, points,board=TRANSDUCERS):
     out = []
     for i in range(activations.shape[0]):
-        A = forward_model(points[i]).to(device)
+        A = forward_model(points[i],board).to(device)
        
         out.append(A@activations[i])
     out = torch.stack(out,0)
     return out.squeeze()
 
-def propagate_abs(activations, points):
-    out = propagate(activations, points)
+def propagate_abs(activations, points,board=TRANSDUCERS):
+    out = propagate(activations, points,board)
     return torch.abs(out)
 
 def permute_points(points,index,axis=0):
