@@ -3,9 +3,6 @@ from Utilities import device, propagate, add_lev_sig
 import Constants as c
 
 
-
-
-
 def gorkov_autograd(activation, points, K1=None, K2=None, retain_graph=False):
 
     var_points = torch.autograd.Variable(points.data, requires_grad=True).to(device)
@@ -50,7 +47,7 @@ def get_finite_diff_points(points, axis, stepsize = 0.000135156253):
 
     return points_h, points_neg_h
 
-def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K1=None, K2=None):
+def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K1=None, K2=None,prop_function=propagate,prop_fun_args={}):
     # torch.autograd.set_detect_anomaly(True)
     B = points.shape[0]
     D = len(axis)
@@ -84,7 +81,7 @@ def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K
         i += 1
 
 
-    pressure_points = propagate(activations, fin_diff_points)
+    pressure_points = prop_function(activations, fin_diff_points,**prop_fun_args)
 
     pressure = pressure_points[:,:N]
     pressure_fin_diff = pressure_points[:,N:]
@@ -107,6 +104,7 @@ def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K
     
     # p_in =  torch.abs(pressure)
     p_in = torch.sqrt(torch.real(pressure) **2 + torch.imag(pressure)**2)
+    p_in = torch.squeeze(p_in,2)
     U = K1 * p_in**2 - K2 *grad_term
     
     return U
