@@ -175,8 +175,8 @@ if __name__ == "__main__":
     B = torch.tensor((X,0.07, 0.07))
     C = torch.tensor((X,-0.07, -0.07))
     
-    from Utilities import create_points, forward_model, device, TOP_BOARD
-    from Solvers import wgs
+    from Utilities import create_points, forward_model, device, TOP_BOARD, forward_model_batched
+    from Solvers import wgs_batch
     from Gorkov import gorkov_autograd
 
     from BEM import propagate_BEM_pressure, load_scatterer,compute_E, compute_H, get_lines_from_plane
@@ -193,12 +193,15 @@ if __name__ == "__main__":
 
     H = compute_H(scatterer,TOP_BOARD)
     E = compute_E(scatterer,points,TOP_BOARD,H=H) #E=F+GH
-
-    _, _, x = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
     
+    # F = forward_model(points[0,:],TOP_BOARD).to(device)
+    # _, _, x = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
+    _,_,x = wgs_batch(E,torch.ones(N,1).to(device)+0j,200)
+
+    line_params = {"scatterer":scatterer,"origin":origin,"normal":normal}
 
     Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
               colour_function_args=[{"H":H,"scatterer":scatterer}],
-              add_lines_functions=[get_lines_from_plane],add_line_args=[{"scatterer":scatterer,"origin":origin,"normal":normal}])
+              add_lines_functions=[get_lines_from_plane],add_line_args=[line_params])
     
     # Visualise(A,B,C,x,colour_functions=[propagate_abs],points=points,res=res,colour_function_args=[{"board":TOP_BOARD}])
