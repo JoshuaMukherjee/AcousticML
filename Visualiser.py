@@ -103,8 +103,10 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     for i in range(0,res[0]):
         for j in range(res[1]):
             positions[:,:,i*res[0]+j] = A + step_x * i + step_y * j
-           
+    
+    print(positions.shape)
     field_val = colour_function(activation,positions,**colour_function_args)
+    print(field_val.shape)
     result = torch.reshape(field_val, res)
 
     if flip:
@@ -114,7 +116,7 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     return result
 
 def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colour_function_args=None, 
-              res=(200,200), cmaps=[], add_lines_functions=None, add_line_args=None):
+              res=(200,200), cmaps=[], add_lines_functions=None, add_line_args=None,vmin=0,vmax=12000):
     results = []
     lines = []
     if len(points) > 0:
@@ -139,7 +141,7 @@ def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colou
         else:
             cmap = 'hot'
         plt.subplot(1,len(colour_functions),i+1)
-        plt.imshow(results[i].cpu().detach().numpy(),cmap=cmap,vmin=0,vmax=9000)
+        plt.imshow(results[i].cpu().detach().numpy(),cmap=cmap,vmin=vmin,vmax=vmax)
         plt.colorbar()
 
         if add_lines_functions is not None:
@@ -168,40 +170,55 @@ if __name__ == "__main__":
     # B = torch.tensor((0.06, 0.06, 0))
     # C = torch.tensor((-0.06, -0.06, 0))
 
-    res=(300,300)
+    res=(200,200)
 
     X = 0
     A = torch.tensor((X,-0.07, 0.07))
     B = torch.tensor((X,0.07, 0.07))
     C = torch.tensor((X,-0.07, -0.07))
     
-    from Utilities import create_points, forward_model, device, TOP_BOARD, forward_model_batched
+    from Utilities import create_points, forward_model, device, TOP_BOARD, forward_model_batched, TRANSDUCERS
     from Solvers import wgs_batch
-    from Gorkov import gorkov_autograd
+    from Gorkov import gorkov_autograd, gorkov_fin_diff
 
-    from BEM import propagate_BEM_pressure, load_scatterer,compute_E, compute_H, get_lines_from_plane
+    from BEM import propagate_BEM_pressure, load_scatterer,compute_E, compute_H, get_lines_from_plane, load_multiple_scatterers,propagate_BEM
     
     N = 4
     points=  create_points(N,x=X)
-    print(points.shape)
 
-    path = "Media/bunny-lam1.stl"
-    scatterer = load_scatterer(path,dz=-0.06)
+    # path = "Media/bunny-lam1.stl"
+    # scatterer = load_scatterer(path,dz=-0.06)
+    # paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl"]
+    # scatterer = load_multiple_scatterers(paths,dzs=[0,-0.06])
+    
+    #Side by Side
+    paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl"]
+    scatterer = load_multiple_scatterers(paths,dys=[-0.06,0.06],rotxs=[-90,90])
+
+    #Side, Side, Back
+    # paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl","Media/flat-lam1.stl"]
+    # scatterer = load_multiple_scatterers(paths,dys=[-0.06,0.06,0],dxs=[0,0,0.06],rotxs=[-90,90,0],rotys=[0,0,90])
 
     origin = (X,0,-0.06)
     normal = (1,0,0)
 
-    H = compute_H(scatterer,TOP_BOARD)
-    E = compute_E(scatterer,points,TOP_BOARD,H=H) #E=F+GH
+    H = compute_H(scatterer,TRANSDUCERS)
+    E = compute_E(scatterer,points,TRANSDUCERS,H=H) #E=F+GH
     
     # F = forward_model(points[0,:],TOP_BOARD).to(device)
     # _, _, x = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
     _,_,x = wgs_batch(E,torch.ones(N,1).to(device)+0j,200)
+    x = add_lev_sig(x)
 
     line_params = {"scatterer":scatterer,"origin":origin,"normal":normal}
 
-    Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
-              colour_function_args=[{"H":H,"scatterer":scatterer}],
-              add_lines_functions=[get_lines_from_plane],add_line_args=[line_params])
+    # Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
+    #           colour_function_args=[{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}],
+    #           add_lines_functions=[get_lines_from_plane],add_line_args=[line_params])
+
+    Visualise(A,B,C,x,colour_functions=[gorkov_fin_diff],points=points,res=res,
+              colour_function_args=[{"prop_function":propagate_BEM,"prop_fun_args":{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}}],
+              add_lines_functions=[get_lines_from_plane],add_line_args=[line_params],
+              vmin=-1e-5, vmax=-1e-6)
     
     # Visualise(A,B,C,x,colour_functions=[propagate_abs],points=points,res=res,colour_function_args=[{"board":TOP_BOARD}])
