@@ -8,14 +8,54 @@ import matplotlib.pyplot as plt
 from Utilities import device, TOP_BOARD, forward_model_batched, create_points
 import Constants
 
+def scatterer_file_name(scatterer):
+    f_name = scatterer.filename 
+    bounds = [str(round(i,2)) for i in scatterer.bounds()]
+    rots = str(scatterer.metadata["rotX"][0]) + str(scatterer.metadata["rotY"][0]) + str(scatterer.metadata["rotZ"][0])
+    # if "\\" in f_name:
+        # f_name = f_name.split("/")[1].split(".")[0]
+    f_name = f_name + "".join(bounds) +"-" + "".join(rots)
+    return f_name
 
 
-def load_scatterer(path, compute_areas = True, compute_normals=True, dx=0,dy=0,dz=0):
+def load_scatterer(path, compute_areas = True, compute_normals=True, dx=0,dy=0,dz=0, rotx=0, roty=0, rotz=0):
     scatterer = vedo.load(path)
     if compute_areas: scatterer.compute_cell_size()
     if compute_normals: scatterer.compute_normals()
+    scatterer.metadata["rotX"] = 0
+    scatterer.metadata["rotY"] = 0
+    scatterer.metadata["rotZ"] = 0
+
+    scatterer.filename = scatterer.filename.split("/")[1]
+
+    rotate(scatterer,(1,0,0),rotx)
+    rotate(scatterer,(0,1,0),roty)
+    rotate(scatterer,(0,0,1),rotz)
+
     translate(scatterer,dx,dy,dz)
+    
+
     return scatterer
+
+def load_multiple_scatterers(paths,  compute_areas = True, compute_normals=True, dxs=[],dys=[],dzs=[], rotxs=[], rotys=[], rotzs=[]):
+    dxs += [0] * (len(paths) - len(dxs))
+    dys += [0] * (len(paths) - len(dys))
+    dzs += [0] * (len(paths) - len(dzs))
+
+    rotxs += [0] * (len(paths) - len(rotxs))
+    rotys += [0] * (len(paths) - len(rotys))
+    rotzs += [0] * (len(paths) - len(rotzs))
+
+    scatterers = []
+    names= []
+    for i,path in enumerate(paths):
+        scatterer = load_scatterer(path, compute_areas, compute_normals, dxs[i],dys[i],dzs[i],rotxs[i],rotys[i],rotzs[i])
+        f_name = scatterer_file_name(scatterer)
+        scatterers.append(scatterer)
+        names.append(f_name)
+    combined = vedo.merge(scatterers)
+    combined.filename = "--".join(names)
+    return combined
 
 def get_plane(scatterer, origin=(0,0,0), normal=(1,0,0)):
     intersection = scatterer.clone().intersect_with_plane(origin,normal)
@@ -52,6 +92,16 @@ def plot_plane(connections):
 
 def translate(scatterer, dx=0,dy=0,dz=0):
     scatterer.shift(np.array([dx,dy,dz]))
+
+def rotate(scatterer, axis, rot):
+    if axis[0]:
+        scatterer.metadata["rotX"] = scatterer.metadata["rotX"] + rot
+    if axis[1]:
+        scatterer.metadata["rotY"] = scatterer.metadata["rotZ"] + rot
+    if axis[2]:
+        scatterer.metadata["rotZ"] = scatterer.metadata["rotZ"] + rot
+    scatterer.rotate(rot, axis)
+
 
 def compute_green_derivative(y,x,norms,B,N,M):
     distance = torch.sqrt(torch.sum((y - x)**2,dim=3))
@@ -141,20 +191,21 @@ def compute_E(scatterer, points, board=TOP_BOARD, use_cache_H=True, print_lines=
     
     if H is None:
         if use_cache_H:
-            f_name = scatterer.filename 
-            bounds = [str(round(i,2)) for i in scatterer.bounds()]
-            f_name = f_name.split("/")[1].split(".")[0]
-            f_name = "Media/BEMCache/" + f_name + "".join(bounds)+".bin"
+            
+            f_name = scatterer_file_name(scatterer)
+            f_name = "Media/BEMCache/"  +  f_name + ".bin"
 
             try:
+                if print_lines: print("Trying to load H...")
                 H = pickle.load(open(f_name,"rb"))
             except FileNotFoundError:
-                # print("Computing H...")
+                if print_lines: print("Not found, computing H...")
                 H = compute_H(scatterer,board)
                 f = open(f_name,"wb")
                 pickle.dump(H,f)
                 f.close()
         else:
+            if print_lines: print("Computing H...")
             H = compute_H(scatterer,board)
         
     
@@ -176,7 +227,8 @@ def propagate_BEM(activations,points,scatterer=None,board=TOP_BOARD,H=None,E=Non
             scatterer = load_scatterer(scatterer)
         E = compute_E(scatterer,points,board,H=H)
     
-    return E@activations
+    out = E@activations
+    return out
 
 def propagate_BEM_pressure(activations,points,scatterer=None,board=TOP_BOARD,H=None,E=None):
     point_activations = propagate_BEM(activations,points,scatterer,board,H,E)
@@ -186,10 +238,9 @@ def propagate_BEM_pressure(activations,points,scatterer=None,board=TOP_BOARD,H=N
 
 
 if __name__ == "__main__":
-    path = "Media/bunny-lam4.stl"
-    scatterer = load_scatterer(path)
-    translate(scatterer,dz=-0.06)
-
+    paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl","Media/flat-lam1.stl"]
+    # scatterer = load_scatterer(path)
+    scatterer = load_multiple_scatterers(paths,dys=[-0.06,0.06,0],dxs=[0,0,0.06],rotxs=[-90,90,0],rotys=[0,0,90])
     origin = (0,0,-0.06)
     normal = (1,0,0)
 
@@ -197,8 +248,11 @@ if __name__ == "__main__":
     B = 2
     points = create_points(N,B)
 
+    vedo.show(scatterer)   
+    '''
 
-    E = compute_E(scatterer,points,TOP_BOARD) #E=F+GH
+
+    E = compute_E(scatterer,points,TOP_BOARD,print_lines=True) #E=F+GH
 
     from Solvers import wgs
     _, _,x1 = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
@@ -209,7 +263,8 @@ if __name__ == "__main__":
     # print(E)
     # print(x.shape)
     print(propagate_BEM_pressure(x,points,E=E))
+    '''
 
-    
+
 
 
