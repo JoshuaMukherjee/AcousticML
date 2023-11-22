@@ -1,8 +1,7 @@
 import torch
 from Utilities import propagate_abs, add_lev_sig, device, create_board
 import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use("TkAgg")
+
 
 def get_point_pos(A,B,C, points, res=(200,200),flip=True):
     AB = torch.tensor([B[0] - A[0], B[1] - A[1], B[2] - A[2]])
@@ -114,8 +113,10 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     
     return result
 
-def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colour_function_args=None, res=(200,200), cmaps=[]):
+def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colour_function_args=None, 
+              res=(200,200), cmaps=[], add_lines_functions=None, add_line_args=None):
     results = []
+    lines = []
     if len(points) > 0:
         pts_pos = get_point_pos(A,B,C,points,res)
         # print(pts_pos)
@@ -128,6 +129,9 @@ def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colou
     for i,colour_function in enumerate(colour_functions):
         result = Visualise_single(A,B,C,activation,colour_function, colour_function_args[i], res)
         results.append(result)
+        
+        if add_lines_functions is not None:
+            lines.append(add_lines_functions[i](**add_line_args[i]))
 
     for i in range(len(results)):
         if len(cmaps) > 0:
@@ -135,8 +139,26 @@ def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colou
         else:
             cmap = 'hot'
         plt.subplot(1,len(colour_functions),i+1)
-        plt.imshow(results[i].cpu().detach().numpy(),cmap=cmap)
+        plt.imshow(results[i].cpu().detach().numpy(),cmap=cmap,vmin=0,vmax=9000)
         plt.colorbar()
+
+        if add_lines_functions is not None:
+            AB = torch.tensor([B[0] - A[0], B[1] - A[1], B[2] - A[2]])
+            AC = torch.tensor([C[0] - A[0], C[1] - A[1], C[2] - A[2]])
+            # print(AB,AC)
+            norm_x = AB
+            norm_y = AC
+            AB = AB[AB!=0] / res[0]
+            AC = AC[AC!=0] / res[1]
+            # AC = AC / torch.abs(AC)
+            # print(AB,AC)
+            for con in lines[i]:
+                xs = [con[0][0]/AB + res[0]/2, con[1][0]/AB + res[0]/2] #Convert real coordinates to pixels - number of steps in each direction
+                ys = [con[0][1]/AC + res[1]/2, con[1][1]/AC + res[1]/2] #Add res/2 as 0,0,0 in middle of real coordinates not corner of image
+                # print(xs,ys)
+                plt.plot(xs,ys,color = "blue")
+
+        
         plt.scatter(pts_pos_t[1],pts_pos_t[0],marker="x")
         
     plt.show()
@@ -146,28 +168,37 @@ if __name__ == "__main__":
     # B = torch.tensor((0.06, 0.06, 0))
     # C = torch.tensor((-0.06, -0.06, 0))
 
-    res=(200,200)
+    res=(300,300)
 
-    A = torch.tensor((-0.08, 0, 0.08))
-    B = torch.tensor((0.08, 0, 0.08))
-    C = torch.tensor((-0.08, 0, -0.08))
+    X = 0
+    A = torch.tensor((X,-0.07, 0.07))
+    B = torch.tensor((X,0.07, 0.07))
+    C = torch.tensor((X,-0.07, -0.07))
     
-    from Utilities import create_points, forward_model, device
+    from Utilities import create_points, forward_model, device, TOP_BOARD
     from Solvers import wgs
     from Gorkov import gorkov_autograd
 
+    from BEM import propagate_BEM_pressure, load_scatterer,compute_E, compute_H, get_lines_from_plane
     
     N = 4
-    points=  create_points(N,y=0)
+    points=  create_points(N,x=X)
     print(points.shape)
-    F = forward_model(points[0,:]).to(device)
-    _, _, x = wgs(F,torch.ones(N,1).to(device)+0j,200)
+
+    path = "Media/bunny-lam1.stl"
+    scatterer = load_scatterer(path,dz=-0.06)
+
+    origin = (X,0,-0.06)
+    normal = (1,0,0)
+
+    H = compute_H(scatterer,TOP_BOARD)
+    E = compute_E(scatterer,points,TOP_BOARD,H=H) #E=F+GH
+
+    _, _, x = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
     
-    # result = Visualise_single_fast(A,B,C,x)
-    # plt.imshow(result.cpu().detach().numpy(),cmap='hot')
-    # plt.show()
-    # print(result)
+
+    Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
+              colour_function_args=[{"H":H,"scatterer":scatterer}],
+              add_lines_functions=[get_lines_from_plane],add_line_args=[{"scatterer":scatterer,"origin":origin,"normal":normal}])
     
-    x.unsqueeze_(0)
-    x = add_lev_sig(x)
-    Visualise(A,B,C,x,colour_functions=[propagate_abs,gorkov_autograd],points=points,res=res)
+    # Visualise(A,B,C,x,colour_functions=[propagate_abs],points=points,res=res,colour_function_args=[{"board":TOP_BOARD}])
