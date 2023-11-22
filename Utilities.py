@@ -2,14 +2,8 @@ import torch, math, sys
 import Constants
 
 
-
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-
 device = device if '-cpu' not in sys.argv else 'cpu'
-
-# import line_profiler
-# profile = line_profiler.LineProfiler()
 
 
 def create_board(N, z):  
@@ -93,13 +87,11 @@ def forward_model_batched(points, transducers = TRANSDUCERS):
     
 
 def propagate(activations, points,board=TRANSDUCERS):
-    out = []
-    for i in range(activations.shape[0]):
-        A = forward_model(points[i],board).to(device)
-       
-        out.append(A@activations[i])
-    out = torch.stack(out,0)
-    return out.squeeze()
+    A = forward_model_batched(points,board).to(device)
+    prop = A@activations
+    prop = torch.squeeze(prop, 2)
+    return prop
+
 
 def propagate_abs(activations, points,board=TRANSDUCERS):
     out = propagate(activations, points,board)

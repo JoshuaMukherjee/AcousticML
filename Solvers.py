@@ -17,15 +17,25 @@ def wgs(A, b, K):
                     
     return y, p, x
 
-def wgs_wrapper(points,itter = 200):
-    acts = []
-    for point in points:
-        A=forward_model(point, transducers()).to(device)
-        _, _, act = wgs(A,torch.ones(point.shape[1],1).to(device)+0j,itter)
-        acts.append(act)
-    act = torch.stack(acts)
-    return act
+def wgs_batch(A, b, iterations):
+    AT = torch.conj(A).mT.to(device)
+    b0 = b.to(device)
+    x = torch.ones(A.shape[2],1).to(device) + 0j
+    for kk in range(iterations):
+        y = torch.matmul(A,x)                                   # forward propagate
+        y = y/torch.max(torch.abs(y))                           # normalize forward propagated field (useful for next step's division)
+        b = torch.multiply(b0,torch.divide(b,torch.abs(y)))     # update target - current target over normalized field
+        b = b/torch.max(torch.abs(b))                           # normalize target
+        p = torch.multiply(b,torch.divide(y,torch.abs(y)))      # keep phase, apply target amplitude
+        r = torch.matmul(AT,p)                                  # backward propagate
+        x = torch.divide(r,torch.abs(r))                        # keep phase for hologram  
+                    
+    return y, p, x
 
+def wgs_wrapper(points,iter = 200, board = TRANSDUCERS):
+    A = forward_model_batched(points, board)
+    _,_,act = wgs_batch(A,torch.ones(points.shape[2],1).to(device)+0j,iter)
+    return act
 
 def gspat(R,forward, backward, target, iterations):
     #Written by Giorgos Christopoulos 2022
@@ -49,16 +59,11 @@ def gspat(R,forward, backward, target, iterations):
     return phase_hologram, points
 
 def gspat_wrapper(points):
-    holo = []
-    for p in points:
-        A = forward_model(p)
-        backward = torch.conj(A).T
-        R = A@backward
-        phase_hologram,pres = gspat(R,A,backward,torch.ones(p.shape[1],1).to(device)+0j, 200)
-        holo.append(phase_hologram)
-    holo = torch.stack(holo)
-    return holo
-
+    A = forward_model_batched(points)
+    backward = torch.conj(A).mT
+    R = A@backward
+    phase_hologram,pres = gspat(R,A,backward,torch.ones(points.shape[2],1).to(device)+0j, 200)
+    return phase_hologram
 
 def naive(points):
     activation = torch.ones(points.shape[1]) +0j
@@ -72,17 +77,15 @@ def naive(points):
     pressure = torch.abs(out)
     return out, pressure
 
-def naive_solver_batch(points,transd=TRANSDUCERS):
-    outs = []
-    trans_phases = []
-    for p in points:
-        out, trans_phase = naive_solver(p,transd)
+def naive_solver_batch(points,board=TRANSDUCERS):
+    activation = torch.ones(points.shape[2],1) +0j
+    activation = activation.to(device)
+    forward = forward_model_batched(points,board)
+    back = torch.conj(forward).mT
+    trans = back@activation
+    trans_phase=  trans / torch.abs(trans)
+    out = forward@trans_phase
 
-        outs.append(out)
-        trans_phases.append(trans_phase)
-    
-    out = torch.stack(outs)
-    trans_phase = torch.stack(trans_phases)
     return out, trans_phase
 
 def naive_solver(points,transd=TRANSDUCERS):
@@ -101,7 +104,6 @@ def naive_solver(points,transd=TRANSDUCERS):
 def naive_solver_wrapper(points):
     out,act = naive_solver_batch(points)
     return act
-
 
 def ph_thresh(z_last,z,threshold):
 
@@ -147,7 +149,6 @@ def ph_soft(x_last,x,threshold):
     x = abs(x)*torch.exp(1j*ph2)
     return x
 
-
 def temporal_wgs(A, y, K,ref_in, ref_out,T_in,T_out):
     '''
     Based off 
@@ -173,83 +174,11 @@ def temporal_wgs(A, y, K,ref_in, ref_out,T_in,T_out):
         x = ph_thresh(ref_in,x,T_in);    
     return y, p, x
 
-
-def compare_phase():
-    from Dataset import TimeDatasetAtomic
-    import matplotlib.pyplot as plt
-    import matplotlib
-    matplotlib.use('tkagg')
-
-    N = 200
-    movement = 0.0001
-    dataset = TimeDatasetAtomic(1,N,movement=movement)
-    pi = torch.pi
-    for points, changes, activations, pressures in dataset:
-       
-        point = points[0]
-        A=forward_model(point).to(device)
-        _, _, x_wgs = wgs(A,torch.ones(4,1).to(device)+0j,200)
-        z_wgs = A@x_wgs
-
-        x_temp = x_wgs
-        z_temp = z_wgs
-
-        temp_phases = [torch.mean(torch.angle(x_temp))]
-        wgs_phases = [torch.mean(torch.angle(x_wgs))]
-
-        wgs_pressure = []
-        temp_pressure = []
-                
-        T_in = pi/64
-        T_out = 0
-
-        for i in range(1,len(points)):
-            point = points[i]
-            A=forward_model(point).to(device)
-
-
-            _, _, x_temp = temporal_wgs(A,torch.ones(4,1).to(device)+0j,200,x_temp,z_temp,T_in,T_out)
-            z_temp = A@x_temp
-            # print(torch.abs(z_temp))
-            temp_phases.append(torch.mean(torch.angle(x_temp)))
-            temp_pressure.append(torch.mean(torch.abs(z_temp)))
-
-
-            _, _, x_wgs = wgs(A,torch.ones(4,1).to(device)+0j,200)
-            wgs_phases.append(torch.mean(torch.angle(x_wgs)))
-            wgs_pressure.append(torch.mean(torch.abs(A@x_wgs)))
-            
-        temp_phases = [torch.abs(torch.atan2(torch.sin(i),torch.cos(i))) for i in temp_phases]
-        wgs_phases = [torch.abs(torch.atan2(torch.sin(i),torch.cos(i))) for i in wgs_phases]
-
-        temp_changes = []
-        for i in range(1,len(temp_phases)):
-            temp_changes.append(temp_phases[i] - temp_phases[i-1])
-
-        wgs_changes = []
-        for i in range(1,len(temp_phases)):
-            wgs_changes.append(wgs_phases[i] - wgs_phases[i-1])
-
-        ax = plt.subplot(2,1,1)
-        ax.plot(temp_changes,label="Temporal")
-        ax.plot(wgs_changes,label="WGS")
-        ax.set_ylabel("Phase Change (rads)")
-        ax.set_xlabel("Frame")
-
-        ax.plot(torch.linspace(0,N,N),torch.ones(N)*T_in,label="T_in limit = pi/" + str(int(pi/T_in)),color="green")
-        ax.plot(torch.linspace(0,N,N),torch.ones(N)*-1*T_in,color="green")
-        # plt.yticks(torch.linspace(0,2*pi,10))
-        ax.legend()
-
-        ax = plt.subplot(2,1,2)
-        ax.plot(temp_pressure,label="Temporal")
-        ax.plot(wgs_pressure,label="WGS")
-        ax.set_ylabel("Mean Pressure (Pa)")
-        ax.set_xlabel("Frame")
-        ax.legend()
-        plt.show()
-
-
 if __name__ == "__main__":
-   compare_phase()
+   points = create_points(4,2)
+   x = naive_solver_wrapper(points)
+   print(propagate_abs(x,points))
+
+   x = wgs_wrapper(points)
+   print(propagate_abs(x,points))
         
