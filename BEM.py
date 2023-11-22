@@ -171,8 +171,6 @@ def compute_E(scatterer, points, board=TOP_BOARD, use_cache_H=True, print_lines=
 
 
 def propagate_BEM(activations,points,scatterer=None,board=TOP_BOARD,H=None,E=None):
-
-
     if E is None:
         if type(scatterer) == str:
             scatterer = load_scatterer(scatterer)
@@ -185,8 +183,6 @@ def propagate_BEM_pressure(activations,points,scatterer=None,board=TOP_BOARD,H=N
     pressures =  torch.abs(point_activations)
     # print(pressures)
     return pressures
-
-
 
 
 if __name__ == "__main__":
