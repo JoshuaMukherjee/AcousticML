@@ -10,10 +10,11 @@ import Constants
 
 
 
-def load_scatterer(path):
+def load_scatterer(path, compute_areas = True, compute_normals=True, dx=0,dy=0,dz=0):
     scatterer = vedo.load(path)
-    scatterer.compute_cell_size()
-    scatterer.compute_normals()
+    if compute_areas: scatterer.compute_cell_size()
+    if compute_normals: scatterer.compute_normals()
+    translate(scatterer,dx,dy,dz)
     return scatterer
 
 def get_plane(scatterer, origin=(0,0,0), normal=(1,0,0)):
@@ -85,7 +86,9 @@ def compute_G(points, scatterer):
     centres = torch.tensor(scatterer.cell_centers).to(device) #Uses centre points as position of mesh
     centres = centres.expand((B,N,-1,-1))
     
-    p = torch.reshape(points,(B,N,3))
+    # print(points.shape)
+    # p = torch.reshape(points,(B,N,3))
+    p = torch.permute(points,(0,2,1))
     p = torch.unsqueeze(p,2).expand((-1,-1,M,-1))
 
     #Compute cosine of angle between mesh normal and point
@@ -133,24 +136,26 @@ def compute_H(scatterer, board):
 
     return H
 
-def compute_E(scatterer, points, board=TOP_BOARD, use_cache_H=True, print_lines=False):
+def compute_E(scatterer, points, board=TOP_BOARD, use_cache_H=True, print_lines=False, H=None):
     if print_lines: print("H...")
-    if use_cache_H:
-        f_name = scatterer.filename 
-        bounds = [str(round(i,2)) for i in scatterer.bounds()]
-        f_name = f_name.split("/")[1].split(".")[0]
-        f_name = "Media/BEMCache/" + f_name + "".join(bounds)+".bin"
+    
+    if H is None:
+        if use_cache_H:
+            f_name = scatterer.filename 
+            bounds = [str(round(i,2)) for i in scatterer.bounds()]
+            f_name = f_name.split("/")[1].split(".")[0]
+            f_name = "Media/BEMCache/" + f_name + "".join(bounds)+".bin"
 
-        try:
-            H = pickle.load(open(f_name,"rb"))
-        except FileNotFoundError:
-            # print("Computing H...")
+            try:
+                H = pickle.load(open(f_name,"rb"))
+            except FileNotFoundError:
+                # print("Computing H...")
+                H = compute_H(scatterer,board)
+                f = open(f_name,"wb")
+                pickle.dump(H,f)
+                f.close()
+        else:
             H = compute_H(scatterer,board)
-            f = open(f_name,"wb")
-            pickle.dump(H,f)
-            f.close()
-    else:
-         H = compute_H(scatterer,board)
         
     
     if print_lines: print("G...")
@@ -165,9 +170,27 @@ def compute_E(scatterer, points, board=TOP_BOARD, use_cache_H=True, print_lines=
     return E.to(torch.complex64)
 
 
+def propagate_BEM(activations,points,scatterer=None,board=TOP_BOARD,H=None,E=None):
+
+
+    if E is None:
+        if type(scatterer) == str:
+            scatterer = load_scatterer(scatterer)
+        E = compute_E(scatterer,points,board,H=H)
+    
+    return E@activations
+
+def propagate_BEM_pressure(activations,points,scatterer=None,board=TOP_BOARD,H=None,E=None):
+    point_activations = propagate_BEM(activations,points,scatterer,board,H,E)
+    pressures =  torch.abs(point_activations)
+    # print(pressures)
+    return pressures
+
+
+
+
 if __name__ == "__main__":
     path = "Media/bunny-lam4.stl"
-    # path = "Media/Cactus-lam6.stl"
     scatterer = load_scatterer(path)
     translate(scatterer,dz=-0.06)
 
@@ -189,20 +212,8 @@ if __name__ == "__main__":
 
     # print(E)
     # print(x.shape)
-    print(torch.abs(E@x))
+    print(propagate_BEM_pressure(x,points,E=E))
 
     
-    '''
-    intersection = get_plane(scatterer,origin,normal)
-    lines = intersection.lines
 
-    
-    connections = get_lines_from_plane(scatterer,origin,normal)
-    plot_plane(connections)
 
-    '''
-
-    # print(scatterer.inside_points())
-    # vedo.show(scatterer,intersection).close()
-
-    # vedo.show(scatterer)
