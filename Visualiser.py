@@ -194,6 +194,7 @@ if __name__ == "__main__":
     #Side by Side
     paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl"]
     scatterer = load_multiple_scatterers(paths,dys=[-0.06,0.06],rotxs=[-90,90])
+    # print(scatterer)
 
     #Side, Side, Back
     # paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl","Media/flat-lam1.stl"]
@@ -208,17 +209,17 @@ if __name__ == "__main__":
     # F = forward_model(points[0,:],TOP_BOARD).to(device)
     # _, _, x = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
     _,_,x = wgs_batch(E,torch.ones(N,1).to(device)+0j,200)
-    x = add_lev_sig(x)
+    # x = add_lev_sig(x)
 
     line_params = {"scatterer":scatterer,"origin":origin,"normal":normal}
 
-    # Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
-    #           colour_function_args=[{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}],
-    #           add_lines_functions=[get_lines_from_plane],add_line_args=[line_params])
+    Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
+              colour_function_args=[{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}],
+              add_lines_functions=[get_lines_from_plane],add_line_args=[line_params])
 
-    Visualise(A,B,C,x,colour_functions=[gorkov_fin_diff],points=points,res=res,
-              colour_function_args=[{"prop_function":propagate_BEM,"prop_fun_args":{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}}],
-              add_lines_functions=[get_lines_from_plane],add_line_args=[line_params],
-              vmin=-1e-5, vmax=-1e-6)
+    # Visualise(A,B,C,x,colour_functions=[gorkov_fin_diff],points=points,res=res,
+    #           colour_function_args=[{"prop_function":propagate_BEM,"prop_fun_args":{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}}],
+    #           add_lines_functions=[get_lines_from_plane],add_line_args=[line_params],
+    #           vmin=-1e-5, vmax=-1e-6)
     
     # Visualise(A,B,C,x,colour_functions=[propagate_abs],points=points,res=res,colour_function_args=[{"board":TOP_BOARD}])
