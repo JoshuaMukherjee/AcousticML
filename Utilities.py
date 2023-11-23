@@ -60,6 +60,59 @@ def forward_model(points, transducers = TRANSDUCERS):
     trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
     return trans_matrix
 
+def forward_model_grad(points, transducers = TRANSDUCERS):
+    B = points.shape[0]
+    N = points.shape[2]
+    M = transducers.shape[0]
+
+    transducers = torch.unsqueeze(transducers,2)
+    transducers = transducers.expand((B,-1,-1,N))
+    points = torch.unsqueeze(points,1)
+    points = points.expand((-1,M,-1,-1))
+
+    diff = transducers - points
+    distances = torch.sqrt(torch.sum(diff**2, 2))
+    planar_distance= torch.sqrt(torch.sum((diff**2)[:,:,0:2,:],dim=2))
+    
+
+    #Partial derivates of bessel function section wrt xyz
+    sin_theta = torch.divide(planar_distance,distances)
+    partialFpartialU = -1* (Constants.k**2 * Constants.radius**2)/4 * sin_theta + (Constants.k**4 * Constants.radius**4)/48 * sin_theta**3
+    partialUpartiala = torch.ones_like(diff)
+    
+    diff_z = torch.unsqueeze(diff[:,:,2,:],2)
+    diff_z = diff_z.expand((-1,-1,2,-1))
+    
+    denom = torch.unsqueeze((planar_distance*distances**3),2)
+    denom = denom.expand((-1,-1,2,-1))
+    
+    partialUpartiala[:,:,0:2,:] = -1 * (diff[:,:,0:2,:] * diff_z**2) / denom
+    partialUpartiala[:,:,2,:] = (diff[:,:,2,:] * planar_distance) / distances**3
+
+    partialFpartialU = torch.unsqueeze(partialFpartialU,2)
+    partialFpartialU = partialFpartialU.expand((-1,-1,3,-1))
+    partialFpartialX  = partialFpartialU * partialUpartiala
+
+    dist_expand = torch.unsqueeze(distances,2)
+    dist_expand = dist_expand.expand((-1,-1,3,-1))
+    partialGpartialX = (Constants.P_ref * diff) / dist_expand**3
+
+    partialHpartialX = 1j * Constants.k * (diff / dist_expand) * torch.e**(1j * Constants.k * dist_expand)
+
+    bessel_arg=Constants.k*Constants.radius*torch.divide(planar_distance,distances)
+    F=1-torch.pow(bessel_arg,2)/8+torch.pow(bessel_arg,4)/192
+    F = torch.unsqueeze(F,2)
+    F = F.expand((-1,-1,3,-1))
+
+    G = Constants.P_ref / dist_expand
+    H = torch.e**(1j * Constants.k * dist_expand)
+
+    
+    derivative = G*(H*partialFpartialX + F*partialHpartialX) + F*H*partialGpartialX
+
+    return derivative[:,:,0,:].permute((0,2,1)), derivative[:,:,1,:].permute((0,2,1)), derivative[:,:,2,:].permute((0,2,1))
+
+
 def forward_model_batched(points, transducers = TRANSDUCERS):
     B = points.shape[0]
     N = points.shape[2]
@@ -81,17 +134,15 @@ def forward_model_batched(points, transducers = TRANSDUCERS):
     p = 1j*Constants.k*distance
     phase = torch.e**(p)
 
-    trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
+    trans_matrix=2*Constants.P_ref*torch.multiply(torch.divide(phase,distance),directivity)
 
     return trans_matrix.permute((0,2,1))
     
-
 def propagate(activations, points,board=TRANSDUCERS):
     A = forward_model_batched(points,board).to(device)
     prop = A@activations
     prop = torch.squeeze(prop, 2)
     return prop
-
 
 def propagate_abs(activations, points,board=TRANSDUCERS):
     out = propagate(activations, points,board)
@@ -107,7 +158,6 @@ def permute_points(points,index,axis=0):
     if axis == 3:
         return points[:,:,:,index]
 
-
 def swap_output_to_activations(out_mat,points):
     acts = None
     for i,out in enumerate(out_mat):
@@ -120,14 +170,12 @@ def swap_output_to_activations(out_mat,points):
             acts = torch.stack((acts,A.T @ pressures),0)
     return acts
 
-
 def convert_to_complex(matrix):
     # B x 1024 x N (real) -> B x N x 512 x 2 -> B x 512 x N (complex)
     matrix = torch.permute(matrix,(0,2,1))
     matrix = matrix.view((matrix.shape[0],matrix.shape[1],-1,2))
     matrix = torch.view_as_complex(matrix.contiguous())
     return torch.permute(matrix,(0,2,1))
-
 
 def convert_pats(board):
     raise Exception("DO NOT USE")
@@ -153,7 +201,6 @@ def get_convert_indexes():
 
 
     return indexes
-
 
 def do_NCNN(net, points):
     from Solvers import naive_solver
@@ -199,7 +246,6 @@ def create_points(N,B=1,x=None,y=None,z=None, min_pos=-0.06, max_pos = 0.06):
 
     return points
     
-# @profile
 def add_lev_sig(activation):
     act = activation.clone().to(device)
 
@@ -223,9 +269,33 @@ def generate_pressure_targets(N,B=1, max_val=10000, min_val=7000):
 
 
 if __name__ == "__main__":
-    from Solvers import wgs
+    from Solvers import wgs,wgs_batch
+    from Gorkov import gorkov_fin_diff
+
     
     points = create_points(4,2)
+    
+
+    Fx, Fy, Fz = forward_model_grad(points)
+    
+    F = forward_model_batched(points)
+    _, _, x = wgs_batch(F,torch.ones(4,1).to(device)+0j,200)
+
+    p = torch.abs(F@x)**2
+    grad_x = torch.abs(Fx@x)**2
+    grad_y = torch.abs(Fy@x)**2
+    grad_z = torch.abs(Fz@x)**2
+
+    K1 = Constants.V / (4*Constants.p_0*Constants.c_0**2)
+    K2 = 3*Constants.V / (4*(2*Constants.f**2 * Constants.p_0))
+    U = K1*p - K2*(grad_x+grad_y+grad_z)
+    U_fin = gorkov_fin_diff(x, points)
+    print("Gradient function",U.squeeze_())
+    print("Finite differences",U_fin)
+
+
+
+    '''
 
     A1 = forward_model(points[0,:])
     _, _, x1 = wgs(A1,torch.ones(4,1).to(device)+0j,200)
@@ -240,7 +310,7 @@ if __name__ == "__main__":
     print(torch.abs(A@x))
 
 
-    '''
+
     A = forward_model(points[0,:])
     _, _, x = wgs(A,torch.ones(4,1).to(device)+0j,200)
     x = torch.unsqueeze(x,0)
