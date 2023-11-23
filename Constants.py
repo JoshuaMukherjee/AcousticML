@@ -10,3 +10,4 @@ f = 40000
 wavelength = 0.00865
 k = 2*pi / wavelength
 radius=0.005
+P_ref = 8.02
