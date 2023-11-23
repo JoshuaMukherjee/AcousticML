@@ -104,35 +104,87 @@ def gorkov_fin_diff(activations, points, axis="XYZ", stepsize = 0.000135156253,K
     
     # p_in =  torch.abs(pressure)
     p_in = torch.sqrt(torch.real(pressure) **2 + torch.imag(pressure)**2)
-    p_in = torch.squeeze(p_in,2)
+    # p_in = torch.squeeze(p_in,2)
     U = K1 * p_in**2 - K2 *grad_term
     
     return U
 
     
+def force_gorkov(activations, points, axis="XYZ",stepsize = 0.000135156253, gorkov_method = gorkov_fin_diff, gorkov_args={}):
+    B = points.shape[0]
+    D = len(axis)
+    N = points.shape[2]
+    fin_diff_points=  torch.zeros((B,3,((2*D)+1)*N)).to(device)
+    fin_diff_points[:,:,:N] = points.clone()
+    
+    
+    if len(activations.shape) < 3:
+        activations = torch.unsqueeze(activations,0).clone().to(device)
+
+    i = 2
+    if "X" in axis:
+        points_h, points_neg_h = get_finite_diff_points(points, 0, stepsize)
+        fin_diff_points[:,:,N:i*N] = points_h
+        fin_diff_points[:,:,D*N+(i-1)*N:D*N+i*N] = points_neg_h
+
+        i += 1
+
+    
+    if "Y" in axis:
+        points_h, points_neg_h = get_finite_diff_points(points, 1, stepsize)
+        fin_diff_points[:,:,(i-1)*N:i*N] = points_h
+        fin_diff_points[:,:,D*N+(i-1)*N:D*N+i*N] = points_neg_h
+        i += 1
+    
+    if "Z" in axis:
+        points_h, points_neg_h = get_finite_diff_points(points, 2, stepsize)
+        fin_diff_points[:,:,(i-1)*N:i*N] = points_h
+        fin_diff_points[:,:,D*N+(i-1)*N:D*N+i*N] = points_neg_h
+        i += 1
+
+    
+    gorkovs = gorkov_method(activations, fin_diff_points,**gorkov_args)
+    
+    gorkov = gorkovs[:,:N]
+    gorkov_fin_diff = gorkovs[:,N:]
+
+    split = torch.reshape(gorkov_fin_diff,(B,2, ((2*D))*N // 2))
+    grad = (split[:,0,:] - split[:,1,:]) / (2*stepsize)
+    grad = torch.reshape(grad,(B,D,N))
+
+    force = -1 * grad
+
+    return force, gorkov
+
+
+
 
 if __name__ == "__main__":
     from Utilities import create_points, forward_model
-    from Solvers import wgs
+    from Solvers import wgs_wrapper, wgs
 
+    points = create_points(4,1)
+    x = wgs_wrapper(points)
+    x = add_lev_sig(x)
+    force_points(x,points)
     
-    def run():
-        N =4
-        B=2
-        points=  create_points(N,B=B)
-        print(points)
-        xs = torch.zeros((B,512,1)) +0j
-        for i in range(B):
-            A = forward_model(points[i,:]).to(device)
-            _, _, x = wgs(A,torch.ones(N,1).to(device)+0j,200)
-            xs[i,:] = x
+    # def run():
+    #     N =4
+    #     B=2
+    #     points=  create_points(N,B=B)
+    #     print(points)
+    #     xs = torch.zeros((B,512,1)) +0j
+    #     for i in range(B):
+    #         A = forward_model(points[i,:]).to(device)
+    #         _, _, x = wgs(A,torch.ones(N,1).to(device)+0j,200)
+    #         xs[i,:] = x
 
 
-        xs = add_lev_sig(xs)
+    #     xs = add_lev_sig(xs)
 
-        gorkov_AG = gorkov_autograd(xs,points)
-        print(gorkov_AG)
+    #     gorkov_AG = gorkov_autograd(xs,points)
+    #     print(gorkov_AG)
 
-        gorkov_FD = gorkov_fin_diff(xs,points,axis="XYZ")
-        print(gorkov_FD)
-    run()
+    #     gorkov_FD = gorkov_fin_diff(xs,points,axis="XYZ")
+    #     print(gorkov_FD)
+    # run()
