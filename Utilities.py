@@ -28,6 +28,7 @@ TOP_BOARD = create_board(17,.234/2)
 
 
 def forward_model(points, transducers = TRANSDUCERS):
+    
     #Written by Giorgos Christopoulos, 2022
     m=points.size()[1]
     n=transducers.size()[0]
@@ -60,7 +61,7 @@ def forward_model(points, transducers = TRANSDUCERS):
     trans_matrix=2*8.02*torch.multiply(torch.divide(phase,distance),directivity)
     return trans_matrix
 
-def forward_model_grad(points, transducers = TRANSDUCERS):
+def compute_gradients(points, transducers = TRANSDUCERS):
     B = points.shape[0]
     N = points.shape[2]
     M = transducers.shape[0]
@@ -93,12 +94,15 @@ def forward_model_grad(points, transducers = TRANSDUCERS):
     partialFpartialU = partialFpartialU.expand((-1,-1,3,-1))
     partialFpartialX  = partialFpartialU * partialUpartiala
 
+    #Grad of Pref / d(xt,t)
     dist_expand = torch.unsqueeze(distances,2)
     dist_expand = dist_expand.expand((-1,-1,3,-1))
     partialGpartialX = (Constants.P_ref * diff) / dist_expand**3
 
+    #Grad of e^ikd(xt,t)
     partialHpartialX = 1j * Constants.k * (diff / dist_expand) * torch.e**(1j * Constants.k * dist_expand)
 
+    #Combine
     bessel_arg=Constants.k*Constants.radius*torch.divide(planar_distance,distances)
     F=1-torch.pow(bessel_arg,2)/8+torch.pow(bessel_arg,4)/192
     F = torch.unsqueeze(F,2)
@@ -107,11 +111,151 @@ def forward_model_grad(points, transducers = TRANSDUCERS):
     G = Constants.P_ref / dist_expand
     H = torch.e**(1j * Constants.k * dist_expand)
 
-    
+    return F,G,H, partialFpartialX, partialGpartialX, partialHpartialX, partialFpartialU, partialUpartiala
+
+def forward_model_grad(points, transducers = TRANSDUCERS):
+    F,G,H, partialFpartialX, partialGpartialX, partialHpartialX,_,_ = compute_gradients(points, transducers)
     derivative = G*(H*partialFpartialX + F*partialHpartialX) + F*H*partialGpartialX
 
     return derivative[:,:,0,:].permute((0,2,1)), derivative[:,:,1,:].permute((0,2,1)), derivative[:,:,2,:].permute((0,2,1))
 
+def forward_model_second_derivative_unmixed(points, transducers = TRANSDUCERS):
+    F,G,H, partialFpartialX, partialGpartialX, partialHpartialX , partialFpartialU, partialUpartialX= compute_gradients(points, transducers)
+
+    B = points.shape[0]
+    N = points.shape[2]
+    M = transducers.shape[0]
+
+    transducers = torch.unsqueeze(transducers,2)
+    transducers = transducers.expand((B,-1,-1,N))
+    points = torch.unsqueeze(points,1)
+    points = points.expand((-1,M,-1,-1))
+
+    diff = transducers - points
+    distance_axis = diff**2
+    distances = torch.sqrt(torch.sum(distance_axis, 2))
+    planar_distance= torch.sqrt(torch.sum(distance_axis[:,:,0:2,:],dim=2))
+
+    partial2fpartialX2 = torch.ones_like(diff)
+
+    dx = distance_axis[:,:,0,:]
+    dy = distance_axis[:,:,1,:]
+    dz = distance_axis[:,:,2,:]
+    
+    planar_square = planar_distance**2
+    distances_square  = distances**2
+
+    partial2fpartialX2[:,:,0,:] = (-2*dx**2*planar_square*distances_square + dy**2 * distances_square + planar_square * (2*dx**2 - dy**2 - dz**2)) / (planar_square**(3/4) * distances_square**(5/2))
+    partial2fpartialX2[:,:,1,:] = (planar_square**2 * (-1*(dx*2-2*dy**2 + dz**2)) -2*dy**2*planar_square*distances_square +dx**2*distances_square**2) / (planar_square**(3/4) * distances_square**(5/2))
+    partial2fpartialX2[:,:,2,:] = planar_distance * (((3*dz**2)/distances_square**(5/2)) - (1/distances_square**(3/2)))
+
+    sin_theta = torch.divide(planar_distance,distances)
+    partial2Fpartialf2 = -1 * (Constants.k**2 * Constants.radius**2)/4 + (Constants.k**4 * Constants.radius**4)/16 * sin_theta**2
+
+    partial2Fpartialf2 = torch.unsqueeze(partial2Fpartialf2,2)
+    partial2Fpartialf2 = partial2Fpartialf2.expand((-1,-1,3,-1))
+    partial2FpartialX2 = partialUpartialX**2 * partial2Fpartialf2 + partial2fpartialX2*partialFpartialU
+
+    dist_expand = torch.unsqueeze(distances,2)
+    dist_expand = dist_expand.expand((-1,-1,3,-1))
+
+    partialdpartialX =  diff / dist_expand
+
+    partial2HpartialX2 = Constants.k * torch.e**(1j*Constants.k*dist_expand) * (dist_expand * (Constants.k * diff*partialdpartialX + 1j)+1j*diff*partialdpartialX) / dist_expand**2
+
+    partial2GpartialX2 = (Constants.P_ref * (3*diff * partialdpartialX + dist_expand)) / (dist_expand**4)
+
+    derivative = 2*partialHpartialX * (G * partialFpartialX + F * partialGpartialX) + H*(G*partial2FpartialX2 + 2*partialFpartialX*partialGpartialX + F*partial2GpartialX2) + F*G*partial2HpartialX2
+    
+    return derivative[:,:,0,:].permute((0,2,1)), derivative[:,:,1,:].permute((0,2,1)), derivative[:,:,2,:].permute((0,2,1))
+
+def forward_model_second_derivative_mixed(points, transducers = TRANSDUCERS):
+    
+    F,G,H, Fa, Ga, Ha , Fu, Ua = compute_gradients(points, transducers)
+
+    B = points.shape[0]
+    N = points.shape[2]
+    M = transducers.shape[0]
+
+    transducers = torch.unsqueeze(transducers,2)
+    transducers = transducers.expand((B,-1,-1,N))
+    points = torch.unsqueeze(points,1)
+    points = points.expand((-1,M,-1,-1))
+    
+    diff = transducers - points
+    distance_axis = diff**2
+    distances = torch.sqrt(torch.sum(distance_axis, 2))
+    planar_distance= torch.sqrt(torch.sum(distance_axis[:,:,0:2,:],dim=2))
+
+    sin_theta = torch.divide(planar_distance,distances)
+
+    dx = distance_axis[:,:,0,:]
+    dy = distance_axis[:,:,1,:]
+    dz = distance_axis[:,:,2,:]
+
+    # distances_sqaured = distances**2
+    distances_five = distances**5
+    distances_cube = distances**3
+    # planar_distance_squared = planar_distance**2
+
+    Fxy = torch.ones((B,M,1,N))
+    Fxz = torch.ones((B,M,1,N))
+    Fyz = torch.ones((B,M,1,N))
+    
+    planar_distance_distances_five = planar_distance * distances_five
+    Uxy = -1*(dx*dy*dz**2 * (4*dx**2+4*dy**2+dz**2)) / (planar_distance**3 * distances_five)
+    Uxz = ((dx*dz) * (2*dx**2 + 2*dy**2 -dz**2)) / planar_distance_distances_five
+    Uyz = ((dy*dz)*(2*dx**2 + 2*dy**2 - dz**2)) / planar_distance_distances_five
+
+    Ux = Ua[:,:,0,:]
+    Uy = Ua[:,:,1,:]
+    Uz = Ua[:,:,2,:]
+
+    F_second_U = -1 * (Constants.k**2 * Constants.radius**2)/4 + (Constants.k**4 * Constants.radius**4)/16 * sin_theta**2
+    F_first_U = -1* (Constants.k**2 * Constants.radius**2)/4 * sin_theta + (Constants.k**4 * Constants.radius**4)/48 * sin_theta**3
+
+    F_ab_term_1 = Ux * Uy * F_second_U
+    Fxy = F_ab_term_1 + Uxy*F_first_U
+    Fxz = F_ab_term_1 + Uxz*F_first_U
+    Fyz = F_ab_term_1 + Uyz*F_first_U
+
+    dist_xy = (dx*dy) / distances_cube
+    dist_xz = (dz*dz) / distances_cube
+    dist_yz = (dy*dz) / distances_cube
+
+    dist_x = -1 * dx / distances
+    dist_y = -1 * dy / distances
+    dist_z = -1 * dz / distances
+
+    Hxy = -Constants.k *  H[:,:,0,:] * (Constants.k * dist_y * dist_x - 1j*dist_xy)
+    Hxz = -Constants.k *  H[:,:,1,:] * (Constants.k * dist_z * dist_x - 1j*dist_xz)
+    Hyz = -Constants.k *  H[:,:,2,:] * (Constants.k * dist_y * dist_z - 1j*dist_yz)
+
+    Gxy = Constants.P_ref * (2*dist_y*dist_x - distances * dist_xy) / distances_cube
+    Gxz = Constants.P_ref * (2*dist_z*dist_x - distances * dist_xz) / distances_cube
+    Gyz = Constants.P_ref * (2*dist_z*dist_y - distances * dist_yz) / distances_cube
+
+    Fx = Fa[:,:,0,:] 
+    Fy = Fa[:,:,1,:] 
+    Fz = Fa[:,:,2,:]
+
+    Hx = Ha[:,:,0,:] 
+    Hy = Ha[:,:,1,:] 
+    Hz = Ha[:,:,2,:]
+
+    Gx = Ga[:,:,0,:] 
+    Gy = Ga[:,:,1,:] 
+    Gz = Ga[:,:,2,:] 
+
+    F_ = F[:,:,0,:]
+    H_ = H[:,:,0,:]
+    G_ = G[:,:,0,:]
+
+    Pxy = H_*(Fx * Gy + Fy*Gx + Fxy*G_ + F_*Gxy) + G_ * (Fx*Hy+Fy*Hx + F_*Hxy) + F_*(Gx*Hy + Gy*Hx)
+    Pxz = H_*(Fx * Gz + Fz*Gx + Fxz*G_ + F_*Gxz) + G_ * (Fx*Hz+Fz*Hx + F_*Hxz) + F_*(Gx*Hz + Gz*Hx)
+    Pyz = H_*(Fy * Gz + Fz*Gy + Fyz*G_ + F_*Gyz) + G_ * (Fy*Hz+Fz*Hy + F_*Hyz) + F_*(Gy*Hz + Gz*Hy)
+
+    return Pxy.permute(0,2,1), Pxz.permute(0,2,1), Pyz.permute(0,2,1)
 
 def forward_model_batched(points, transducers = TRANSDUCERS):
     B = points.shape[0]
@@ -267,31 +411,73 @@ def generate_pressure_targets(N,B=1, max_val=10000, min_val=7000):
     targets = torch.FloatTensor(B, N,1).uniform_(min_val,max_val).to(device)
     return targets
 
+def return_matrix(x,y,mat=None):
+    return mat
 
 if __name__ == "__main__":
     from Solvers import wgs,wgs_batch
-    from Gorkov import gorkov_fin_diff
+    from Gorkov import gorkov_fin_diff, gorkov_analytical
 
     
     points = create_points(4,2)
     
 
-    Fx, Fy, Fz = forward_model_grad(points)
     
     F = forward_model_batched(points)
     _, _, x = wgs_batch(F,torch.ones(4,1).to(device)+0j,200)
 
-    p = torch.abs(F@x)**2
-    grad_x = torch.abs(Fx@x)**2
-    grad_y = torch.abs(Fy@x)**2
-    grad_z = torch.abs(Fz@x)**2
+    Fx, Fy, Fz = forward_model_grad(points)
+    Fxx, Fyy, Fzz = forward_model_second_derivative_unmixed(points)
+    Fxy, Fxz, Fyz = forward_model_second_derivative_mixed(points)
+
+    x = add_lev_sig(x)
+    p = torch.abs(F@x)
+    Px = torch.abs(Fx@x)
+    Py = torch.abs(Fy@x)
+    Pz = torch.abs(Fz@x)
+    Pxx = torch.abs(Fxx@x)
+    Pyy = torch.abs(Fyy@x)
+    Pzz = torch.abs(Fzz@x)
+    Pxy = torch.abs(Fxy@x)
+    Pxz = torch.abs(Fxz@x)
+    Pyz = torch.abs(Fyz@x)
+
+    print(Constants.V,Constants.p_0,Constants.c_0 )
+    
+    K1 = Constants.V / (4*Constants.p_0*Constants.c_0**2)
+    K2 = 3*Constants.V / (4*(2*Constants.f**2 * Constants.p_0))
+
+    # print(K1, K2)
+
+
+    single_sum = 2*K2*(Pz+Py+Pz)
+    # print("SS",single_sum, Pz)
+    Fx = -1 * (2*p * (K1 * Px - K2*(Pxz+Pxy+Pxx)) - Px*single_sum)
+    Fy = -1 * (2*p * (K1 * Py - K2*(Pyz+Pyy+Pxy)) - Py*single_sum)
+    Fz = -1 * (2*p * (K1 * Pz - K2*(Pzz+Pyz+Pxz)) - Pz*single_sum)
+
+    # print( Pz, Pzz, Pyz, Pxz)
+
+    # print(2*p * (K1 * Pz - K2*(Pzz+Pyz+Pxz)) , Pz*single_sum)
+   
+    force = torch.cat([Fx,Fy,Fz],2)
+    
+    
+    print(p)
+    print(force)
 
     K1 = Constants.V / (4*Constants.p_0*Constants.c_0**2)
     K2 = 3*Constants.V / (4*(2*Constants.f**2 * Constants.p_0))
-    U = K1*p - K2*(grad_x+grad_y+grad_z)
-    U_fin = gorkov_fin_diff(x, points)
-    print("Gradient function",U.squeeze_())
-    print("Finite differences",U_fin)
+    U = K1*p**2 - K2*(Px**2+Py**2+Pz**2)
+    print(U)
+    print(K1*p**2)
+    print((Px**2+Py**2+Pz**2))
+
+    # axis="XYZ"
+    # U = gorkov_analytical(x,points,axis=axis)
+    # U_fin = gorkov_fin_diff(x, points,axis=axis)
+    # print("Gradient function",U.squeeze_())
+    # print("Finite differences",U_fin)
 
 
 

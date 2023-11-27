@@ -105,6 +105,7 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
             positions[:,:,i*res[0]+j] = A + step_x * i + step_y * j
     
     print(positions.shape)
+    # print(colour_function_args)
     field_val = colour_function(activation,positions,**colour_function_args)
     print(field_val.shape)
     result = torch.reshape(field_val, res)
@@ -116,7 +117,7 @@ def Visualise_single(A,B,C,activation,colour_function=propagate_abs, colour_func
     return result
 
 def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colour_function_args=None, 
-              res=(200,200), cmaps=[], add_lines_functions=None, add_line_args=None,vmin=0,vmax=12000):
+              res=(200,200), cmaps=[], add_lines_functions=None, add_line_args=None,vmin=None,vmax=None, matricies = None):
     results = []
     lines = []
     if len(points) > 0:
@@ -125,23 +126,55 @@ def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colou
         pts_pos_t = torch.stack(pts_pos).T
 
 
-    if colour_function_args is None:
+    if colour_function_args is None and colour_functions is not None:
         colour_function_args = [{}]*len(colour_functions)
     
-    for i,colour_function in enumerate(colour_functions):
-        result = Visualise_single(A,B,C,activation,colour_function, colour_function_args[i], res)
-        results.append(result)
+    if colour_functions is not None:
+        for i,colour_function in enumerate(colour_functions):
+            result = Visualise_single(A,B,C,activation,colour_function, colour_function_args[i], res)
+            results.append(result)
         
-        if add_lines_functions is not None:
-            lines.append(add_lines_functions[i](**add_line_args[i]))
+            if add_lines_functions is not None:
+                lines.append(add_lines_functions[i](**add_line_args[i]))
+    
+    else:
+        for i,mat in enumerate(matricies):
+            result = mat
+            print(result)
+            results.append(result)
+        
+            if add_lines_functions is not None:
+                lines.append(add_lines_functions[i](**add_line_args[i]))
+
 
     for i in range(len(results)):
         if len(cmaps) > 0:
             cmap = cmaps[i]
         else:
             cmap = 'hot'
-        plt.subplot(1,len(colour_functions),i+1)
-        plt.imshow(results[i].cpu().detach().numpy(),cmap=cmap,vmin=vmin,vmax=vmax)
+
+        length = len(colour_functions) if colour_functions is not None else len(matricies)
+        plt.subplot(1,length,i+1)
+        im = results[i]
+       
+        v_min = vmin
+        v_max = vmax
+        
+        if type(vmax) is list:
+            v_max = vmax[i]
+        
+        if type(vmin) is list:
+            v_min = vmin[i]
+        
+        if v_min is None:
+            v_min = torch.min(im)
+        if v_max is None:
+            v_max = torch.max(im)
+        
+
+        print(vmax,vmin)
+        
+        plt.imshow(im.cpu().detach().numpy(),cmap=cmap,vmin=v_min,vmax=v_max)
         plt.colorbar()
 
         if add_lines_functions is not None:
@@ -171,6 +204,7 @@ if __name__ == "__main__":
     # C = torch.tensor((-0.06, -0.06, 0))
 
     res=(200,200)
+    # res=(10,10)
 
     X = 0
     A = torch.tensor((X,-0.07, 0.07))
@@ -179,7 +213,7 @@ if __name__ == "__main__":
     
     from Utilities import create_points, forward_model, device, TOP_BOARD, forward_model_batched, TRANSDUCERS
     from Solvers import wgs_batch
-    from Gorkov import gorkov_autograd, gorkov_fin_diff
+    from Gorkov import gorkov_autograd, gorkov_fin_diff, get_force_axis,compute_force
 
     from BEM import propagate_BEM_pressure, load_scatterer,compute_E, compute_H, get_lines_from_plane, load_multiple_scatterers,propagate_BEM
     
@@ -191,9 +225,10 @@ if __name__ == "__main__":
     # paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl"]
     # scatterer = load_multiple_scatterers(paths,dzs=[0,-0.06])
     
+    board = TRANSDUCERS
     #Side by Side
     paths = ["Media/flat-lam1.stl","Media/flat-lam1.stl"]
-    scatterer = load_multiple_scatterers(paths,dys=[-0.06,0.06],rotxs=[-90,90])
+    scatterer = load_multiple_scatterers(paths,board,dys=[-0.06,0.06],rotxs=[-90,90])
     # print(scatterer)
 
     #Side, Side, Back
@@ -202,9 +237,10 @@ if __name__ == "__main__":
 
     origin = (X,0,-0.06)
     normal = (1,0,0)
+    
 
-    H = compute_H(scatterer,TRANSDUCERS)
-    E = compute_E(scatterer,points,TRANSDUCERS,H=H) #E=F+GH
+    H = compute_H(scatterer,board)
+    E = compute_E(scatterer,points,board,H=H) #E=F+GH
     
     # F = forward_model(points[0,:],TOP_BOARD).to(device)
     # _, _, x = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
@@ -213,9 +249,12 @@ if __name__ == "__main__":
 
     line_params = {"scatterer":scatterer,"origin":origin,"normal":normal}
 
-    Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
-              colour_function_args=[{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}],
-              add_lines_functions=[get_lines_from_plane],add_line_args=[line_params])
+    
+
+    Visualise(A,B,C,x,colour_functions=[get_force_axis,propagate_BEM_pressure],points=points,res=res,
+              colour_function_args=[{},{"H":H,"scatterer":scatterer,"board":board}],
+              add_lines_functions=[get_lines_from_plane,get_lines_from_plane],add_line_args=[line_params,line_params],
+              vmin=[None,0],vmax=[None,12000])
 
     # Visualise(A,B,C,x,colour_functions=[gorkov_fin_diff],points=points,res=res,
     #           colour_function_args=[{"prop_function":propagate_BEM,"prop_fun_args":{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}}],
