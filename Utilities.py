@@ -449,9 +449,9 @@ if __name__ == "__main__":
 
     # print(K1, K2)
 
-
+    print(Px, Py, Pz)
+    exit()
     single_sum = 2*K2*(Pz+Py+Pz)
-    # print("SS",single_sum, Pz)
     Fx = -1 * (2*p * (K1 * Px - K2*(Pxz+Pxy+Pxx)) - Px*single_sum)
     Fy = -1 * (2*p * (K1 * Py - K2*(Pyz+Pyy+Pxy)) - Py*single_sum)
     Fz = -1 * (2*p * (K1 * Pz - K2*(Pzz+Pyz+Pxz)) - Pz*single_sum)
@@ -465,6 +465,7 @@ if __name__ == "__main__":
     
     print(p)
     print(force)
+    
 
     K1 = Constants.V / (4*Constants.p_0*Constants.c_0**2)
     K2 = 3*Constants.V / (4*(2*Constants.f**2 * Constants.p_0))

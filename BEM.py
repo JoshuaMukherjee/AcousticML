@@ -5,7 +5,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 
-from Utilities import device, TOP_BOARD, TRANSDUCERS, forward_model_batched, create_points, forward_model_grad, forward_model_second_derivative_unmixed
+from Utilities import device, TOP_BOARD, TRANSDUCERS, forward_model_batched, create_points, forward_model_grad, forward_model_second_derivative_unmixed, forward_model_second_derivative_mixed
 import Constants
 
 def scatterer_file_name(scatterer,board):
@@ -333,7 +333,7 @@ def BEM_forward_model_grad(points, scatterer, board=TRANSDUCERS, use_cache_H=Tru
     else:
         return Ex, Ey, Ez
     
-def BEM_forward_model_second_derivative_unmixed(points, scatterer, board=TRANSDUCERS, use_cache_H=True, print_lines=False, H=None):
+def BEM_forward_model_second_derivative_unmixed(points, scatterer, board=TRANSDUCERS, use_cache_H=True, print_lines=False, H=None, return_components=False):
     B = points.shape[0]
     N = points.shape[2]
 
@@ -402,10 +402,17 @@ def BEM_forward_model_second_derivative_unmixed(points, scatterer, board=TRANSDU
     Caa[:,:,:,1] = ((( (3 * vecs[:,:,:,1]**2) / (vec_norms_five) - (1)/(vec_norms_cube))*(vec_dot_norm)) / norm_norms) - ((2*vecs[:,:,:,1]*norms[:,:,:,1]) / (norm_norms*vec_norms_cube**3))
     Caa[:,:,:,2] = ((( (3 * vecs[:,:,:,2]**2) / (vec_norms_five) - (1)/(vec_norms_cube))*(vec_dot_norm)) / norm_norms) - ((2*vecs[:,:,:,2]*norms[:,:,:,2]) / (norm_norms*vec_norms_cube**3))
     
-    Gz, Gy, Gz, A, B, C, Aa, Ba, Ca = get_G_partial(points, scatterer, board, return_components=True)
+    Gx, Gy, Gz, A, B, C, Aa, Ba, Ca = get_G_partial(points, scatterer, board, return_components=True)
 
     Gaa = 2*Ca*(B*Aa + A*Ba) + C*(B*Aaa + 2*Aa*Ba + A*Baa)+ A*B*Caa
     Gaa = Gaa.to(torch.complex64)
+
+    areas = torch.Tensor(scatterer.celldata["Area"]).to(device)
+    areas = torch.unsqueeze(areas,0)
+    areas = torch.unsqueeze(areas,0)
+    areas = torch.unsqueeze(areas,3)
+
+    Gaa = Gaa * areas
 
     Fxx, Fyy, Fzz = forward_model_second_derivative_unmixed(points)
 
@@ -413,8 +420,117 @@ def BEM_forward_model_second_derivative_unmixed(points, scatterer, board=TRANSDU
     Eyy = Fyy + Gaa[:,:,:,1]@H
     Ezz = Fzz + Gaa[:,:,:,2]@H
 
-    return Exx, Eyy, Ezz
+    if return_components:
+        return Exx, Eyy, Ezz, Fxx, Fyy, Fzz, Gx, Gy, Gz, A, B, C, Aa, Ba, Ca, H
+    else:    
+        return Exx, Eyy, Ezz
 
+def BEM_forward_model_second_derivative_mixed(points, scatterer, board=TRANSDUCERS, use_cache_H=True, print_lines=False, H=None):
+    if H is None:
+        if use_cache_H:
+            
+            f_name = scatterer_file_name(scatterer, board)
+            f_name = "Media/BEMCache/"  +  f_name + ".bin"
+
+            try:
+                if print_lines: print("Trying to load H...")
+                H = pickle.load(open(f_name,"rb"))
+            except FileNotFoundError:
+                if print_lines: print("Not found, computing H...")
+                H = compute_H(scatterer,board)
+                f = open(f_name,"wb")
+                pickle.dump(H,f)
+                f.close()
+        else:
+            if print_lines: print("Computing H...")
+            H = compute_H(scatterer,board)
+    
+    
+    Batch = points.shape[0]
+    N = points.shape[2]
+    centres = torch.tensor(scatterer.cell_centers).to(device)
+    M = centres.shape[0]
+    
+    p = torch.permute(points,(0,2,1))
+    p = torch.unsqueeze(p,2).expand((-1,-1,M,-1))
+
+    vecs = p-centres #Centres -> Points
+    norms = torch.tensor(scatterer.cell_normals).to(device)
+    norms = norms.expand(Batch,N,-1,-1)
+
+    distance = torch.sqrt(torch.sum(vecs**2,dim=3))
+    distance_square = distance**2
+    distance_cube = distance**3
+    
+    distance_exp = torch.unsqueeze(distance,3)
+    distance_exp = distance_exp.expand(-1,-1,-1,3)
+    distance_exp_square = distance_exp**2
+    distance_exp_cube = distance_exp**3
+
+    distances_ab = torch.zeros(Batch,N,M,3) #0 -> xy, 1 -> xz, 2 -> yz
+    distances_ab[:,:,:,0] = vecs[:,:,:,0]*vecs[:,:,:,1] 
+    distances_ab[:,:,:,1] = vecs[:,:,:,0]*vecs[:,:,:,2]
+    distances_ab[:,:,:,2] = vecs[:,:,:,1]*vecs[:,:,:,2]
+    distances_ab = distances_ab/distance_exp_cube
+
+    distance_a = torch.zeros(Batch,N,M,3)
+    distance_a[:,:,:,0] = vecs[:,:,:,0]
+    distance_a[:,:,:,1] = vecs[:,:,:,0]
+    distance_a[:,:,:,2] = vecs[:,:,:,1]
+    distance_a  = distance_a / distance_exp_cube
+
+    Aab_term_1 = 1/(4*torch.pi*distance_cube) * torch.e**(1j *Constants.k*distance)
+    Aab = torch.zeros(Batch,N,M,3)+0j #0 -> xy, 1 -> xz, 2 -> yz
+    Aab[:,:,:,0] = Aab_term_1 * (distance_a[:,:,:,0] * distance_a[:,:,:,1] * (Constants.k**2 * distance_square + 1j * Constants.k * distance - 2) + distance * distances_ab[:,:,:,0] * (1-1j*Constants.k*distance))
+    Aab[:,:,:,1] = Aab_term_1 * (distance_a[:,:,:,0] * distance_a[:,:,:,2] * (Constants.k**2 * distance_square + 1j * Constants.k * distance - 2) + distance * distances_ab[:,:,:,1] * (1-1j*Constants.k*distance))
+    Aab[:,:,:,2] = Aab_term_1 * (distance_a[:,:,:,1] * distance_a[:,:,:,2] * (Constants.k**2 * distance_square + 1j * Constants.k * distance - 2) + distance * distances_ab[:,:,:,2] * (1-1j*Constants.k*distance))
+
+    Bab = torch.zeros(Batch,N,M,3)+0j #0 -> xy, 1 -> xz, 2 -> yz
+    Bab[:,:,:,0] = (distance*distances_ab[:,:,:,0] - 2*distance_a[:,:,:,0]*distance_a[:,:,:,1]) / (distance_cube)
+    Bab[:,:,:,1] = (distance*distances_ab[:,:,:,1] - 2*distance_a[:,:,:,0]*distance_a[:,:,:,2]) / (distance_cube)
+    Bab[:,:,:,2] = (distance*distances_ab[:,:,:,2] - 2*distance_a[:,:,:,1]*distance_a[:,:,:,2]) / (distance_cube)
+
+    vec_norm_prod = vecs*norms
+
+    norm_norms = torch.norm(norms,2,dim=3)
+    vec_norms = torch.norm(vecs,2,dim=3)
+    vec_norms_cube = vec_norms**3
+    vec_norms_five = vec_norms**5
+    
+    denom_1 = norm_norms*vec_norms_cube
+    denom_2 = norm_norms*vec_norms_five
+
+    Cab = torch.zeros(Batch,N,M,3)+0j #0 -> xy, 1 -> xz, 2 -> yz
+    Cab[:,:,:,0] = (2*vec_norm_prod[:,:,:,1] - vec_norm_prod[:,:,:,0])/denom_1 - ((3*vecs[:,:,:,1] * (norms[:,:,:,1]*(vecs[:,:,:,2]**2 + vecs[:,:,:,1]**2) - vecs[:,:,:,0]*(vec_norm_prod[:,:,:,2]+vec_norm_prod[:,:,:,1])))) / denom_2
+    Cab[:,:,:,1] = (2*vec_norm_prod[:,:,:,2] - vec_norm_prod[:,:,:,0])/denom_1 - ((3*vecs[:,:,:,2] * (norms[:,:,:,2]*(vecs[:,:,:,1]**2 + vecs[:,:,:,2]**2) - vecs[:,:,:,0]*(vec_norm_prod[:,:,:,1]+vec_norm_prod[:,:,:,2])))) / denom_2
+    Cab[:,:,:,2] = (2*vec_norm_prod[:,:,:,2] - vec_norm_prod[:,:,:,1])/denom_1 - ((3*vecs[:,:,:,2] * (norms[:,:,:,1]*(vecs[:,:,:,0]**2 + vecs[:,:,:,2]**2) - vecs[:,:,:,1]*(vec_norm_prod[:,:,:,0]+vec_norm_prod[:,:,:,2])))) / denom_2
+
+
+    # Exx, Eyy, Ezz, Fxx, Fyy, Fzz, Gx, Gy, Gz, A, B, C, Aa, Ba, Ca, H = BEM_forward_model_second_derivative_unmixed(points, scatterer, board, use_cache_H, print_lines, H, return_components=True)
+    Gx, Gy, Gz, A, B, C, Aa, Ba, Ca = get_G_partial(points, scatterer,board,True)
+
+    Gxy = C[:,:,:,0]*(Aa[:,:,:,0]*Ba[:,:,:,1] + Aa[:,:,:,1]*Ba[:,:,:,0] + Aab[:,:,:,0]*B[:,:,:,0] + A[:,:,:,0]*Bab[:,:,:,0]) + B[:,:,:,0] * (Aa[:,:,:,0] * Ca[:,:,:,1] + Aa[:,:,:,1] * Ca[:,:,:,0] + A[:,:,:,0]*Cab[:,:,:,0]) + A[:,:,:,0] * (Ba[:,:,:,0]*Ca[:,:,:,1] + Ba[:,:,:,1]*Ca[:,:,:,0])
+    Gxz = C[:,:,:,1]*(Aa[:,:,:,0]*Ba[:,:,:,2] + Aa[:,:,:,2]*Ba[:,:,:,0] + Aab[:,:,:,1]*B[:,:,:,0] + A[:,:,:,0]*Bab[:,:,:,1]) + B[:,:,:,0] * (Aa[:,:,:,0] * Ca[:,:,:,2] + Aa[:,:,:,2] * Ca[:,:,:,0] + A[:,:,:,0]*Cab[:,:,:,1]) + A[:,:,:,0] * (Ba[:,:,:,0]*Ca[:,:,:,2] + Ba[:,:,:,2]*Ca[:,:,:,0])
+    Gyz = C[:,:,:,2]*(Aa[:,:,:,1]*Ba[:,:,:,2] + Aa[:,:,:,2]*Ba[:,:,:,1] + Aab[:,:,:,2]*B[:,:,:,0] + A[:,:,:,0]*Bab[:,:,:,2]) + B[:,:,:,0] * (Aa[:,:,:,1] * Ca[:,:,:,2] + Aa[:,:,:,2] * Ca[:,:,:,1] + A[:,:,:,0]*Cab[:,:,:,2]) + A[:,:,:,0] * (Ba[:,:,:,1]*Ca[:,:,:,2] + Ba[:,:,:,2]*Ca[:,:,:,1])
+
+    Gxy = Gxy.to(torch.complex64)
+    Gxz = Gxz.to(torch.complex64)
+    Gyz = Gyz.to(torch.complex64)
+
+    areas = torch.Tensor(scatterer.celldata["Area"]).to(device)
+
+    Gxy = Gxy * areas
+    Gxz = Gxz * areas
+    Gyz = Gyz * areas
+
+    Fxy, Fxz, Fyz = forward_model_second_derivative_mixed(points, board)
+    
+    Exy = Fxy + Gxy@H
+    Exz = Fxz + Gxz@H
+    Eyz = Fyz + Gyz@H
+
+
+    return Exy, Exz, Eyz
 
 if __name__ == "__main__":
     from Solvers import wgs_batch
@@ -430,12 +546,16 @@ if __name__ == "__main__":
     normal = (1,0,0)
 
     N=4
-    B = 2
+    B = 1
     points = create_points(N,B)
+
+    BEM_forward_model_second_derivative_mixed(points, scatterer,board)
+
 
     E = compute_E(scatterer, points, board)
     Ex, Ey, Ez = BEM_forward_model_grad(points,scatterer,board)
     Exx, Eyy, Ezz = BEM_forward_model_second_derivative_unmixed(points,scatterer,board)
+    Exy, Exz, Eyz = BEM_forward_model_second_derivative_mixed(points,scatterer,board)
 
     F = forward_model_batched(points, board)
     _,_,x = wgs_batch(E, torch.ones(N,1).to(device)+0j,200)
@@ -450,11 +570,38 @@ if __name__ == "__main__":
     pxx = Exx@x
     pyy = Eyy@x
     pzz = Ezz@x
-
-   
+    pxy = Exy@x
+    pxz = Exz@x
+    pyz = Eyz@x
 
     K1 = Constants.V / (4*Constants.p_0*Constants.c_0**2)
     K2 = 3*Constants.V / (4*(2*Constants.f**2 * Constants.p_0))
+
+    P = torch.abs(p) 
+    Px = torch.abs(px) 
+    Py = torch.abs(py) 
+    Pz = torch.abs(pz) 
+    
+    Pxx = torch.abs(pxx) 
+    Pyy = torch.abs(pyy) 
+    Pzz = torch.abs(pzz) 
+    Pxy = torch.abs(pxy) 
+    Pxz = torch.abs(pxz) 
+    Pyz = torch.abs(pyz)
+
+
+    print(Py,Pxy, Pyy, Pyz)
+    print()
+    print(Pz,Pxz, Pyz, Pzz)
+    
+    single_sum = 2*K2*(Pz+Py+Pz)
+    Fx = -1 * (2*P * (K1 * Px - K2*(Pxz+Pxy+Pxx)) - Px*single_sum)
+    Fy = -1 * (2*P * (K1 * Py - K2*(Pyz+Pyy+Pxy)) - Py*single_sum)
+    Fz = -1 * (2*P * (K1 * Pz - K2*(Pzz+Pyz+Pxz)) - Pz*single_sum)
+
+    force = torch.cat([Fx,Fy,Fz],2)
+    print(force)
+    exit()
 
     U_ag = gorkov_fin_diff(x,points,prop_function=propagate_BEM,prop_fun_args={"scatterer":scatterer,"board":board},K1=K1, K2=K2)
     print(U_ag)
