@@ -167,7 +167,6 @@ def compute_force(activations, points,board=TRANSDUCERS,return_components=False)
     force_y = -1 * (2*p * (K1 * Py - K2*(Pyz+Pyy+Pxy)) - Py*single_sum)
     force_z = -1 * (2*p * (K1 * Pz - K2*(Pzz+Pyz+Pxz)) - Pz*single_sum)
 
-    
 
     if return_components:
         return force_x, force_y, force_z
@@ -190,6 +189,7 @@ if __name__ == "__main__":
 
     points = create_points(4,1,x=0)
     x = wgs_wrapper(points)
+    x = add_lev_sig(x)
 
     A = torch.tensor((0,-0.07, 0.07))
     B = torch.tensor((0,0.07, 0.07))
@@ -211,6 +211,8 @@ if __name__ == "__main__":
 
     print("Computing Force...")
     fx, fy, fz = compute_force(x,positions, return_components=True)
+
+
     fx = torch.reshape(fx, res)
     fy = torch.reshape(fy, res)
     fz = torch.reshape(fz, res)
@@ -220,7 +222,7 @@ if __name__ == "__main__":
     fz = torch.rot90(torch.fliplr(fz))
     print("Plotting...")
 
-    Visualise(A,B,C,x,colour_functions=None,points=points,res=res,vmin=-3e-4, vmax= 1e-4, matricies=[fx,fy,fz])
+    Visualise(A,B,C,x,colour_functions=None,points=points,res=res,vmin=-3e-4, vmax= 1e-4, matricies=[fy,fz])
 
     # points = create_points(4,1)
     # x = wgs_wrapper(points)

@@ -390,7 +390,7 @@ def create_points(N,B=1,x=None,y=None,z=None, min_pos=-0.06, max_pos = 0.06):
 
     return points
     
-def add_lev_sig(activation):
+def add_lev_sig(activation, sig=torch.pi):
     act = activation.clone().to(device)
 
     s = act.shape
@@ -398,7 +398,7 @@ def add_lev_sig(activation):
 
     act = torch.reshape(act,(B,2, 256))
 
-    act[:,0,:] = torch.e**(1j*(torch.pi + torch.angle(act[:,0,:].clone())))
+    act[:,0,:] = torch.e**(1j*(sig + torch.angle(act[:,0,:].clone())))
     act = torch.reshape(act,s)
 
     return act
