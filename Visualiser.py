@@ -172,7 +172,7 @@ def Visualise(A,B,C,activation,points=[],colour_functions=[propagate_abs], colou
             v_max = torch.max(im)
         
 
-        print(vmax,vmin)
+        # print(vmax,vmin)
         
         plt.imshow(im.cpu().detach().numpy(),cmap=cmap,vmin=v_min,vmax=v_max)
         plt.colorbar()
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     from Solvers import wgs_batch
     from Gorkov import gorkov_autograd, gorkov_fin_diff, get_force_axis,compute_force
 
-    from BEM import propagate_BEM_pressure, load_scatterer,compute_E, compute_H, get_lines_from_plane, load_multiple_scatterers,propagate_BEM
+    from BEM import propagate_BEM_pressure, load_scatterer,compute_E, compute_H, get_lines_from_plane, load_multiple_scatterers,propagate_BEM,BEM_gorkov_analytical
     
     N = 4
     points=  create_points(N,x=X)
@@ -245,16 +245,18 @@ if __name__ == "__main__":
     # F = forward_model(points[0,:],TOP_BOARD).to(device)
     # _, _, x = wgs(E[0,:],torch.ones(N,1).to(device)+0j,200)
     _,_,x = wgs_batch(E,torch.ones(N,1).to(device)+0j,200)
-    # x = add_lev_sig(x)
+    x = add_lev_sig(x)
 
     line_params = {"scatterer":scatterer,"origin":origin,"normal":normal}
 
-    
+    # Visualise(A,B,C,x,colour_functions=[BEM_gorkov_analytical],points=points,res=res,
+    #           colour_function_args=[{"H":H,"scatterer":scatterer,"board":board}],
+    #           add_lines_functions=[get_lines_from_plane],add_line_args=[line_params],vmin=[-1e-5],vmax=[-1e-6])
 
-    Visualise(A,B,C,x,colour_functions=[get_force_axis,propagate_BEM_pressure],points=points,res=res,
-              colour_function_args=[{},{"H":H,"scatterer":scatterer,"board":board}],
-              add_lines_functions=[get_lines_from_plane,get_lines_from_plane],add_line_args=[line_params,line_params],
-              vmin=[None,0],vmax=[None,12000])
+    # Visualise(A,B,C,x,colour_functions=[propagate_BEM_pressure],points=points,res=res,
+    #           colour_function_args=[{"H":H,"scatterer":scatterer,"board":board}],
+    #           add_lines_functions=[get_lines_from_plane],add_line_args=[line_params],
+    #           vmin=[0],vmax=[15000])
 
     # Visualise(A,B,C,x,colour_functions=[gorkov_fin_diff],points=points,res=res,
     #           colour_function_args=[{"prop_function":propagate_BEM,"prop_fun_args":{"H":H,"scatterer":scatterer,"board":TRANSDUCERS}}],
@@ -262,3 +264,5 @@ if __name__ == "__main__":
     #           vmin=-1e-5, vmax=-1e-6)
     
     # Visualise(A,B,C,x,colour_functions=[propagate_abs],points=points,res=res,colour_function_args=[{"board":TOP_BOARD}])
+
+    Visualise(A,B,C,x,colour_functions=[get_force_axis],points=points,res=res,colour_function_args=[{"board":TRANSDUCERS}])
