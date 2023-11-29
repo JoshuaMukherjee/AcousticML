@@ -103,8 +103,10 @@ if "-sp" in sys.argv:
         activation_out = torch.reshape(activation_out_img,(1,512,1))
         pressure_out = torch.abs(propagate(activation_out, p))
 
-        ys = ys+[y.detach().cpu().item() for y in pressure_out]
-        xs = xs+[x.detach().cpu().item() for x in targets]
+        # print(pressure_out)
+
+        ys = ys+[y.detach().cpu().item() for y in torch.squeeze(pressure_out)]
+        xs = xs+[x.detach().cpu().item() for x in torch.squeeze(targets)]
     
     plt.scatter(xs,ys)
     plt.xlim(4000,11000)
