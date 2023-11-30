@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from Utilities import propagate, generate_gorkov_targets, generate_pressure_targets
+from acoustools.Utilities import propagate, generate_gorkov_targets, generate_pressure_targets
 
 
 def train_PointNet(net, params):

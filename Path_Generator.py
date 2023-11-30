@@ -3,8 +3,8 @@ import json
 import sys
 import itertools
 
-from Utilities import device, propagate, create_points, do_NCNN, get_convert_indexes, add_lev_sig
-from Solvers import wgs_wrapper, gspat_wrapper, naive_solver_wrapper
+from acoustools.Utilities import device, propagate, create_points, do_NCNN, get_convert_indexes, add_lev_sig
+from acoustools.Solvers import wgs_wrapper, gspat_wrapper, naive_solver_wrapper
 
 
 

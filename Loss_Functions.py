@@ -1,6 +1,6 @@
 import torch
-from Gorkov import gorkov_autograd, gorkov_fin_diff
-from Utilities import add_lev_sig
+from acoustools.Gorkov import gorkov_autograd, gorkov_fin_diff
+from acoustools.Utilities import add_lev_sig
 
 def max_loss(pressure, true):
   if len(true.shape) > 1:

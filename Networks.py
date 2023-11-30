@@ -13,7 +13,7 @@ Retrieved from http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-h
 '''
 
 from Symmetric_Functions import SymMax
-from Utilities import device
+from acoustools.Utilities import device
 
 import math
 
@@ -652,8 +652,8 @@ class ResNet(nn.Module):
 
 if __name__ == "__main__":
 
-    from Utilities import forward_model, transducers, create_points, propagate
-    from Solvers import wgs, wgs_wrapper
+    from acoustools.Utilities import forward_model, transducers, create_points, propagate
+    from acoustools.Solvers import wgs, wgs_wrapper
 
     B = 2
     N = 4

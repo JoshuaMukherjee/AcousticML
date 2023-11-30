@@ -2,8 +2,9 @@ import sys
 import pandas as pd
 import torch
 
-from Utilities import device, propagate, create_points, do_NCNN, get_convert_indexes, add_lev_sig
-from Solvers import wgs_wrapper, gspat_wrapper, naive_solver_wrapper
+from acoustools.Utilities import device, propagate, create_points, get_convert_indexes, add_lev_sig
+from acoustools.Solvers import wgs_wrapper, gspat_wrapper, naive_solver_wrapper
+from MLUtilities import do_NCNN
 
 if __name__ == "__main__":
 

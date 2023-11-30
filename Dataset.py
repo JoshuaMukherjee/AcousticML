@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
-from Utilities import forward_model, transducers, device
-from Solvers import wgs, naive_solver
+from acoustools.Utilities import forward_model, transducers, device
+from acoustools.Solvers import wgs, naive_solver
 
 
 class PointDataset(Dataset):
@@ -235,8 +235,8 @@ if __name__ == "__main__":
 
     CREATE_DATASET = False
 
-    length = 600000
-    test_length = 1000 
+    length = 0
+    test_length = 0 
     N = 4
     
     if CREATE_DATASET:

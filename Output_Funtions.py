@@ -1,6 +1,6 @@
 from typing import Any
 import torch
-from Utilities import convert_to_complex
+from acoustools.Utilities import convert_to_complex
 
 class PointNetOut():
     #comvert to complex activations (Bx1024xN) -> (Bx512)

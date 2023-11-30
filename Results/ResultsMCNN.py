@@ -9,11 +9,11 @@ from torch.utils.data import DataLoader
 p = os.path.abspath('.')
 sys.path.insert(1, p)
 
-from Solvers import wgs, gspat,naive_solver, naive_solver_batch
+from acoustools.Solvers import wgs, gspat,naive_solver, naive_solver_batch
 from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset,PressureTargetDataset
-from Utilities import propagate, forward_model, device, do_NCNN, create_points, add_lev_sig, propagate_abs, create_board, generate_pressure_targets
-from Visualiser import Visualise, Visualise_single, get_point_pos
-from Gorkov import gorkov_autograd
+from acoustools.Utilities import propagate, forward_model, device, do_NCNN, create_points, add_lev_sig, propagate_abs, create_board, generate_pressure_targets
+from acoustools.Visualiser import Visualise, Visualise_single, get_point_pos
+from acoustools.Gorkov import gorkov_autograd
 
 if "-latest" in sys.argv:
     latest = "_latest"

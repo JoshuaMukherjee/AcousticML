@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader
 p = os.path.abspath('.')
 sys.path.insert(1, p)
 
-from Solvers import wgs, gspat
+from acoustools.Solvers import wgs, gspat
 from Dataset import PointDataset
-from Utilities import propagate, forward_model, device
+from acoustools.Utilities import propagate, forward_model, device
 from Extra_Point_Functions import add_sine_points
 
 

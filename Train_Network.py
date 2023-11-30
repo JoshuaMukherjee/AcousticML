@@ -14,7 +14,7 @@ import time
 import pickle
 import random
 from Symmetric_Functions import SymSum
-from Utilities import *
+from acoustools.Utilities import *
 
 # torch.autograd.set_detect_anomaly(True)
 

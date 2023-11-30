@@ -1,5 +1,5 @@
 import torch
-from Utilities import device
+from acoustools.Utilities import device
 
 
 def add_sine_points(points, extra_points_per_wave=2, direction = 2,distance=0.0084/4):
