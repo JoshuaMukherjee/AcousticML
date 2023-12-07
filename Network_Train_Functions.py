@@ -626,6 +626,59 @@ def train_pressure_target_mCNN(net,params):
     
     return running, {}
 
+def train_gorkov_target_mCNN(net,params):
+    optimiser = params["optimiser"]
+    loss_function = params["loss_function"]
+    loss_params = params["loss_params"]
+    datasets = params["datasets"]
+    test= params["test"]
+    supervised= params["supervised"]
+    scheduler = params["scheduler"]
+    solver = params["solver"]
+
+    running = 0
+    if not test:
+        net.train()
+    else:
+        net.eval()
+    
+    if not test:
+        optimiser.zero_grad()       
+
+    for dataset in datasets:
+        for points, act_start, targets in iter(dataset):
+            B = points.shape[0]
+
+
+            act_in = torch.reshape(act_start,(B,2,16,16))
+            act_phases = torch.angle(act_in)
+            
+            activation_out_img = net(act_phases, targets) 
+            
+            activation_out = torch.reshape(activation_out_img,(B,512,1))
+            
+            if supervised:
+                loss = loss_function(activation_out, points, targets,**loss_params)
+            else:
+                loss = loss_function(activation_out, points,**loss_params) 
+            
+            running += loss.item()
+            if not test:
+                optimiser.zero_grad()    
+                loss.backward()
+                optimiser.step()
+                   
+
+    if not test: #schedule LR on epochs
+        if scheduler is not None:
+            if type(scheduler) == torch.optim.lr_scheduler.ReduceLROnPlateau:
+                scheduler.step(running)
+            else:
+                scheduler.step()
+    
+    return running, {}
+
+
 
 default_functions = {
     "PointNet":train_PointNet,

@@ -1,5 +1,5 @@
 import torch
-from acoustools.Gorkov import gorkov_autograd, gorkov_fin_diff
+from acoustools.Gorkov import gorkov_autograd, gorkov_fin_diff, gorkov_analytical
 from acoustools.Utilities import add_lev_sig
 
 def max_loss(pressure, true):
@@ -158,6 +158,12 @@ def gorkov_target_l1(activation_out,points, targets, axis="XYZ",stepsize = 0.000
 
 def SQuartError(target, output):
   return torch.sum(torch.pow(target - output,4))
+
+def gorkov_target_analytical_MSE_no_sig(activation_out,points, targets,axis="XYZ"):
+  U = gorkov_analytical(activation_out,points,axis=axis)
+  return torch.mean((targets-U)**2)
+
+
 
 if __name__ == "__main__":
   output = torch.Tensor([[9000,9000,3000,4000],[1000,8000,1000,4000]])
