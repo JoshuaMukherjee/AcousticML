@@ -1,7 +1,9 @@
 import torch
 from torch.utils.data import Dataset
-from acoustools.Utilities import forward_model, transducers, device
-from acoustools.Solvers import wgs, naive_solver
+from acoustools.Utilities import forward_model, transducers, device, generate_gorkov_targets, TRANSDUCERS, create_points
+from acoustools.Solvers import wgs, naive_solver, gradient_descent_solver
+from acoustools.Optimise.Objectives import target_gorkov_mse_objective
+from acoustools.Optimise.Constraints import constrain_phase_only
 
 
 class PointDataset(Dataset):
@@ -208,6 +210,50 @@ class PressureTargetDataset(Dataset):
          '''
          return self.points[i],self.activations[i],self.pressures[i], self.naive_acts[i], self.targets[i]
 
+class GorkovTargetDataset(Dataset):
+    '''
+    outputs points, activations, pressures, naive_act
+    '''
+    def __init__(self,length,N=4,seed=None):
+        self.length = length #Number of point sets in the Dataset (length)
+        self.N = N #Number of points per set
+        self.seed = seed #custom seed
+    
+        self.points = []
+        self.activations = []
+        self.targets = []
+        
+
+        for item in range(self.length):
+            points = create_points(N)
+            
+            
+
+            targets = generate_gorkov_targets(self.N)
+            activations = gradient_descent_solver(points,target_gorkov_mse_objective, 
+                                     constrains=constrain_phase_only, lr=1e4, iters=50, targets=targets,
+                                     objective_params={"no_sig":True})
+
+
+            self.points.append(points.squeeze_(0))
+            
+            self.activations.append(activations.detach().squeeze_(0))
+            
+            self.targets.append(targets.squeeze_(0))
+
+            if item % 200 == 0:
+                print(item,end=" ",flush=True)
+    
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self,i):
+         '''
+         returns points, activations, pressures
+         '''
+         return self.points[i],self.activations[i], self.targets[i]
+
+
 def convert_naive_to_PTD_dataset(dataset_in_path,name,N=4):
     '''
     Converts a ```NaiveDataset``` to a ```PressureTargetDataset```
@@ -233,14 +279,14 @@ def convert_naive_to_PTD_dataset(dataset_in_path,name,N=4):
 
 if __name__ == "__main__":
 
-    CREATE_DATASET = False
+    CREATE_DATASET = True
 
-    length = 0
-    test_length = 0 
+    length = 4
+    test_length = 2 
     N = 4
     
     if CREATE_DATASET:
-        dataset_type = PressureTargetDataset
+        dataset_type = GorkovTargetDataset
         
 
         
