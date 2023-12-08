@@ -163,7 +163,19 @@ def gorkov_target_analytical_MSE_no_sig(activation_out,points, targets,axis="XYZ
   U = gorkov_analytical(activation_out,points,axis=axis)
   return torch.mean((targets-U)**2)
 
+def gorkov_target_analytical_MSE(activation_out,points, targets,axis="XYZ"):
+  activation_out = add_lev_sig(activation_out)
+  U = gorkov_analytical(activation_out,points,axis=axis)
+  return torch.mean((targets-U)**2)
 
+def gorkov_target_log_loss(activation_out,points, targets,axis="XYZ"):
+  # activation_out = add_lev_sig(activation_out)
+  U = gorkov_analytical(activation_out,points,axis=axis)
+  return torch.mean((torch.log(torch.abs(targets - U)))**2)
+
+def gorkov__target_log_loss_abs(activation_out,points, targets,axis="XYZ"):
+  U = gorkov_analytical(activation_out,points,axis=axis)
+  return torch.mean(torch.log((torch.abs(U) - torch.abs(targets))**2))
 
 if __name__ == "__main__":
   output = torch.Tensor([[9000,9000,3000,4000],[1000,8000,1000,4000]])
