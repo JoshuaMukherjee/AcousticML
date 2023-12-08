@@ -281,8 +281,8 @@ if __name__ == "__main__":
 
     CREATE_DATASET = True
 
-    length = 4
-    test_length = 2 
+    length = 200000
+    test_length = 1000
     N = 4
     
     if CREATE_DATASET:
