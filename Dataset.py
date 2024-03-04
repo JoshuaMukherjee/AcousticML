@@ -252,6 +252,44 @@ class GorkovTargetDataset(Dataset):
          returns points, activations, pressures
          '''
          return self.points[i],self.activations[i], self.targets[i]
+    
+
+class DistanceDataset(Dataset):
+    '''
+    Dataset of `points`, `distances`
+    '''
+    def __init__(self,length, N=4, board=TRANSDUCERS):
+        self.length = length
+        self.N = N
+        self.board = board
+
+        self.points = []
+        self.distances = []
+
+        M=board.size()[0]
+        transducers = torch.unsqueeze(board,2)
+        transducers = transducers.expand((-1,-1,N))
+
+        for i in range(length):
+            points = create_points(N,1).squeeze(0)
+
+            p = torch.unsqueeze(points,0)
+            p = p.expand((M,-1,-1))
+
+            distance_axis = (transducers - p) **2
+            distance = torch.sqrt(torch.sum(distance_axis,dim=1))
+
+            self.points.append(points)
+            self.distances.append(distance)
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self,i):
+         '''
+         returns points, distances
+         '''
+         return self.points[i], self.distances[i]
 
 
 def convert_naive_to_PTD_dataset(dataset_in_path,name,N=4):
@@ -281,12 +319,12 @@ if __name__ == "__main__":
 
     CREATE_DATASET = True
 
-    length = 200000
+    length = 100000
     test_length = 1000
     N = 4
     
     if CREATE_DATASET:
-        dataset_type = GorkovTargetDataset
+        dataset_type = DistanceDataset
         
 
         

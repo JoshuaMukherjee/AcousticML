@@ -1,0 +1,36 @@
+{
+    "net":"MultiInputCNN",
+    "net-args":{
+        "CNN_args":{
+            "layers":[32,64,64,64,64,64,64,2],
+            "channels_in":2,
+            "conv_args":{
+                "kernel_size":3,
+                "padding":"same"
+            },
+            "activation":"SELU"
+        },
+        "MLP_vector_args":{
+            "layers":[2,2,2],
+            "input_size":4,
+            "activation":"SELU"
+        },
+        "MLP_feature_args":{
+            "layers":[512,512,512],
+            "input_size":514,
+            "activation":"SELU"
+        }
+
+    },
+    "start-epochs":0,
+    "epochs":600,
+    "train":["GorkovTargetDatasetTrain-4-4.pth"],
+    "test":["GorkovTargetDatasetTest-2-4.pth"], 
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-1},
+    "loss-function":"gorkov_target_analytical_MSE_no_sig",
+    "supervised":true,
+    "batch":2,
+    "solver":"wgs",
+    "train-function":"train_gorkov_target_mCNN"
+}

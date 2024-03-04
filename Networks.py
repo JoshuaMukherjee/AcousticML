@@ -109,6 +109,8 @@ class PointNet(Module):
         # print(self.layers)
 
     def forward(self, x):
+
+        
         out = x
         for layer in self.layers[0]:
             out = layer(out)
@@ -624,7 +626,6 @@ class ResNetBlock(nn.Module):
             
         
         return out
-
 
 class ResNet(nn.Module):
     def __init__(self,layers,input_size, res_sizes, res_block_size = 3, activation = "ReLU", batchnorm=None):

@@ -1,0 +1,26 @@
+{
+    "net":"PointNet",
+    "net-args":{
+        "layer_sets":[[256,256,256],[256,256,256],[256,256,512]],
+        "activation":"SELU",
+        "output_funct":"PointNetPhaseOnly",
+        "input_size":512
+    },
+    "start-epochs":0,
+    "epochs":200,
+    "train":["DistanceDatasetTrain-100000-4.pth"],
+    "test":["DistanceDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-4},
+    "loss-function":"mean_std",
+    "loss-params":{"alpha":1},
+    "supervised":false,
+    "batch":32,
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-3,
+                        "max_lr":1e-4,
+                        "step_size_up":10,
+                        "cycle_momentum":false
+                    },
+    "train-function":"train_PointNet_Distance"
+}

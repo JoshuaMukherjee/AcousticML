@@ -1,0 +1,19 @@
+{
+    "net":"PointNet",
+    "net-args":{
+        "layer_sets":[[256,256,256],[256,256,256],[256,256,512]],
+        "activation":"SELU",
+        "output_funct":"PointNetPhaseOnly",
+        "input_size":512
+    },
+    "start-epochs":0,
+    "epochs":1000,
+    "train":["DistanceDatasetTrain-4-4.pth"],
+    "test":["DistanceDatasetTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-4},
+    "loss-function":"max_mean_pressure",
+    "supervised":false,
+    "batch":2,
+    "train-function":"train_PointNet_Distance"
+}
