@@ -798,7 +798,7 @@ def train_PointNet_Distance_Green(net, params):
             if extra_points_fun is not None:
                 points = extra_points_fun(points,**extra_points_args)
 
-            green = torch.exp(distance*1j*c.k) / distance
+            green = (torch.e ** (distance*1j*c.k)) / distance
             B = green.shape[0]
             N = green.shape[2]
             green_real = torch.view_as_real(green).reshape(B,-1,N)
