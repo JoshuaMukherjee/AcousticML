@@ -294,6 +294,55 @@ class DistanceDataset(Dataset):
          '''
          return self.points[i], self.distances[i]
 
+class GreenDataset(Dataset):
+    '''
+    Dataset of `points`, `distances`, `green`
+    '''
+    def __init__(self,length, N=4, board=TRANSDUCERS):
+        self.length = length
+        self.N = N
+        self.board = board
+
+        self.points = []
+        self.distances = []
+        self.greens = []
+
+        M=board.size()[0]
+        transducers = torch.unsqueeze(board,2)
+        transducers = transducers.expand((-1,-1,N))
+
+        for i in range(length):
+            points = create_points(N,1).squeeze(0)
+
+            p = torch.unsqueeze(points,0)
+            p = p.expand((M,-1,-1))
+
+            distance_axis = (transducers - p) **2
+            distance = torch.sqrt(torch.sum(distance_axis,dim=1))
+            distance = torch.reshape(distance,(2*self.N,16,16))
+           
+
+            green = torch.exp(1j*726.3798*distance) / distance    
+            green_ri = torch.cat((green.real,green.imag),0).to(device)   
+
+
+            self.points.append(points)
+            self.distances.append(distance)
+            self.greens.append(green_ri)
+
+            if i % 1000 == 0:
+                print(i, end = ' ',flush=True)
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self,i):
+         '''
+         returns points, distances, green
+         '''
+         return self.points[i], self.distances[i], self.greens[i]
+
+
 
 def convert_naive_to_PTD_dataset(dataset_in_path,name,N=4):
     '''
@@ -322,12 +371,12 @@ if __name__ == "__main__":
 
     CREATE_DATASET = True
 
-    length = 800000
-    test_length = 0
+    length = 4
+    test_length = 2
     N = 4
     
     if CREATE_DATASET:
-        dataset_type = DistanceDataset
+        dataset_type = GreenDataset
         
 
         

@@ -13,7 +13,7 @@ import Network_Train_Functions
 
 
 files = [
-   "PNG2"
+   "GCNN1"
 ]
 
 def parse(params,name):

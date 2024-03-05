@@ -1,0 +1,24 @@
+{
+    "net":"CNN",
+    "net-args":{
+        "layers":[32,128,128,128,128,128,128,128,64,2],
+        "channels_in":16,
+        "conv_args":{
+            "kernel_size":3,
+            "padding":"same"
+        },
+        "activation":"ReLU",
+        "norm":"BatchNorm2d"
+    },
+    "start-epochs":0,
+    "epochs":1000,
+    "train":["GreenDatasetTrain-4-4.pth"],
+    "test":["GreenDatasetTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-3},
+    "loss-function":"mean_std",
+    "loss-params":{"alpha":1},
+    "supervised":false,
+    "batch":2,
+    "train-function":"Train_CNN_Green_RI"
+}
