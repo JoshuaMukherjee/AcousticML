@@ -7,13 +7,13 @@ from torch.utils.data import DataLoader
 from Train_Network import train
 import Networks, Loss_Functions
 from acoustools.Utilities import device
-from Dataset import PointDataset, FDataset, FDatasetNorm, NaiveDataset, PressureTargetDataset, GorkovTargetDataset, DistanceDataset
+from Dataset import *
 import Extra_Point_Functions
 import Network_Train_Functions
 
 
 files = [
-   "PND8","PND9","PND10","PND11"
+   "PNG2"
 ]
 
 def parse(params,name):

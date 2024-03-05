@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import os,sys
 import torch
 import pickle
-from torch.utils.data import DataLoader 
+from torch.utils.data import DataLoader
 
 
 p = os.path.abspath('.')
@@ -10,8 +10,10 @@ sys.path.insert(1, p)
 
 from acoustools.Solvers import wgs, gspat, wgs_wrapper
 from Dataset import DistanceDataset
-from acoustools.Utilities import propagate, forward_model, device
+from acoustools.Utilities import propagate, forward_model, device, DTYPE
 from Extra_Point_Functions import add_sine_points
+
+import acoustools.Constants as c
 
 OVERFIT = '-overfit' in sys.argv
 
@@ -47,9 +49,12 @@ if "-p" in sys.argv:
 
 
     for p,d in data:
-
-        
-        out = model(d).unsqueeze(1).mT
+       
+        green = torch.exp(d*1j*c.k) / d
+        B = green.shape[0]
+        N = green.shape[2]
+        green_real = torch.view_as_real(green).reshape(B,-1,N)
+        out = model(green_real).unsqueeze(1).mT
 
         if CONST:
             out = out / torch.abs(out)

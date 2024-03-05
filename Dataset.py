@@ -282,6 +282,9 @@ class DistanceDataset(Dataset):
             self.points.append(points)
             self.distances.append(distance)
 
+            if i % 1000 == 0:
+                print(i, end = ' ')
+
     def __len__(self):
         return self.length
 
@@ -319,8 +322,8 @@ if __name__ == "__main__":
 
     CREATE_DATASET = True
 
-    length = 100000
-    test_length = 1000
+    length = 800000
+    test_length = 0
     N = 4
     
     if CREATE_DATASET:
@@ -337,10 +340,10 @@ if __name__ == "__main__":
             test = dataset_type(test_length,N=N)
             torch.save(test,"Datasets/" +test.__class__.__name__+"Test-"+str(test_length)+"-"+str(N)+".pth")
         
-        i = 0
-        for x in train:
-            print(i)
-            i += 1
+        # i = 0
+        # for x in train:
+        #     print(i)
+        #     i += 1
     
     else:
         if length > 0:

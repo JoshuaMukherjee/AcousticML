@@ -41,6 +41,7 @@ class PointNet(Module):
                     output_funct=None, output_funct_args = {}
                 ):
         super(PointNet,self).__init__()
+        self.type(torch.complex64)
         self.layers = torch.nn.ModuleList()
         self.sym_function = sym_function(**sym_args)
         if output_funct is not None:
