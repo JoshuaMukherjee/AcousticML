@@ -13,7 +13,7 @@ import Network_Train_Functions
 
 
 files = [
-   "GCNN1"
+   "GCNN2","GCNN3","GCNN4","GCNN5","GCNN6","GCNN7","GCNN8","GCNN9","GCNN10","GCNN11","GCNN12","GCNN13","GCNN14","GCNN15","GCNN16","GCNN17","GCNN18","GCNN19","GCNN20"
 ]
 
 def parse(params,name):
