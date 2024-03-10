@@ -1,0 +1,25 @@
+{
+    "net":"MLP",
+    "net-args":{
+        "layers":[64,64,64,64,64,64,512],
+        "activation":"SELU",
+        "input_size":4096
+    },
+    "start-epochs":0,
+    "epochs":1000,
+    "train":["GreenDatasetTrain-100000-4.pth"],
+    "test":["GreenDatasetTest-1000-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-4},
+    "loss-function":"mean_std",
+    "loss-params":{"alpha":10},
+    "supervised":false,
+    "batch":32,
+    "train-function":"Train_MLP_Green_RI",
+    "scheduler":"CyclicLR",
+    "scheduler-args":{"base_lr":1e-4,
+                        "max_lr":5e-4,
+                        "step_size_up":5,
+                        "cycle_momentum":false
+                    }
+} 

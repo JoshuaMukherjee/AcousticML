@@ -892,6 +892,53 @@ def Train_CNN_Green_RI(net, params):
     
     return running, {}
 
+def Train_MLP_Green_RI(net, params):
+    
+    optimiser = params["optimiser"]
+    loss_function = params["loss_function"]
+    loss_params = params["loss_params"]
+    datasets = params["datasets"]
+    test= params["test"]
+    supervised= params["supervised"]
+    scheduler = params["scheduler"]
+
+    running = 0
+    if not test:
+        net.train()
+    else:
+        net.eval()
+
+    for dataset in datasets:
+        for points, _, green_ri in iter(dataset):
+            if not test:
+                optimiser.zero_grad()               
+            
+            B = green_ri.shape[0]
+            green_ri = green_ri.reshape(B,-1)
+            x = net(green_ri)
+            x = torch.reshape(x,(-1,512,1)).to(DTYPE)
+            x = torch.e**(1j * x)
+            p = propagate(x, points)
+
+
+            loss = loss_function(p,**loss_params).real
+            
+            running += loss.item()
+            if not test:
+                loss.backward()
+                optimiser.step()
+
+    if not test: #schedule LR on epochs
+        if scheduler is not None:
+            if type(scheduler) == torch.optim.lr_scheduler.ReduceLROnPlateau:
+                scheduler.step(running)
+            else:
+                scheduler.step()
+    
+    return running, {}
+
+
+
 default_functions = {
     "PointNet":train_PointNet,
     "ResPointNet":train_PointNet,

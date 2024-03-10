@@ -1,0 +1,19 @@
+{
+    "net":"MLP",
+    "net-args":{
+        "layers":[64,64,64,64,64,64,512],
+        "activation":"SELU",
+        "input_size":4096
+    },
+    "start-epochs":0,
+    "epochs":1000,
+    "train":["GreenDatasetTrain-4-4.pth"],
+    "test":["GreenDatasetTest-2-4.pth"],
+    "optimiser":"NAdam",
+    "optimiser-args":{"lr":1e-3},
+    "loss-function":"mean_std",
+    "loss-params":{"alpha":1},
+    "supervised":false,
+    "batch":2,
+    "train-function":"Train_MLP_Green_RI"
+} 

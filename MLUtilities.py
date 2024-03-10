@@ -59,3 +59,31 @@ def do_GCNN(net, points, board):
     out = torch.e**(1j * out)
 
     return out
+
+def do_GMLP(net, points, board):
+    B = points.shape[0]
+    N = points.shape[2]
+    M = board.size()[0]
+
+    p = torch.unsqueeze(points,1)
+    p = p.expand((B,M,-1,-1))
+    
+    board = torch.unsqueeze(board,0)
+    board = torch.unsqueeze(board,3)
+    board = board.expand((B,-1,-1,N))
+    
+    distance_axis = (board - p) **2
+    distance = torch.sqrt(torch.sum(distance_axis,dim=2))
+    distance = torch.reshape(distance,(B,2*N,16,16))
+    
+
+    green = torch.exp(1j*726.3798*distance) / distance    
+
+    green_ri = torch.cat((green.real,green.imag),1).to(device)
+    green_ri = green_ri.reshape(B,-1)
+    
+    out = net(green_ri)
+    out = torch.reshape(out,(-1,512,1)).to(DTYPE)
+    out = torch.e**(1j * out)
+
+    return out
