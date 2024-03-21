@@ -13,7 +13,7 @@ import Network_Train_Functions
 
 
 files = [
-   "GMLP2","GMLP3","GMLP4","GMLP5","GMLP6","GMLP7","GMLP8","GMLP9","GMLP10","GMLP11","GMLP12","GMLP13",
+   "GCNN29", "GCNN30"
 ]
 
 

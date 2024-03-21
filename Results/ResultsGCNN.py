@@ -23,11 +23,11 @@ if "-latest" in sys.argv:
 else:
     latest = ""
 
-if "-normD" in sys.argv: #Use a normalised dataset
-    norm = "Norm"
+if "-norm" in sys.argv: #Use a normalised dataset
+    norm = True
     print(norm)
 else:
-    norm = ""
+    norm = False
 
 if "-8" in sys.argv:
     N = 8
@@ -83,7 +83,7 @@ if "-p" in sys.argv:
         print("Generated data...")
         
     else:
-        dataset = torch.load("./Datasets/GreenDataset"+norm+"Train-4-4.pth")
+        dataset = torch.load("./Datasets/GreenDataset"+"Train-4-4.pth")
         P = len(dataset)
         print("Using Overfitted Dataset...")
 
@@ -97,7 +97,7 @@ if "-p" in sys.argv:
 
     for p,d,g in data:
 
-        out = do_GCNN(model, p, TRANSDUCERS)
+        out = do_GCNN(model, p, TRANSDUCERS,norm=norm)
         
         pressure = torch.abs(propagate(out,p))
 

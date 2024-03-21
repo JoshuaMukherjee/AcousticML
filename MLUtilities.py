@@ -33,7 +33,7 @@ def do_NCNN(net, points):
     
     return activation_out.unsqueeze_(2)
 
-def do_GCNN(net, points, board):
+def do_GCNN(net, points, board,norm=False):
     B = points.shape[0]
     N = points.shape[2]
     M = board.size()[0]
@@ -54,6 +54,8 @@ def do_GCNN(net, points, board):
 
     green_ri = torch.cat((green.real,green.imag),1).to(device)
     
+    if norm:
+        green_ri = torch.nn.functional.normalize(green_ri)
     out = net(green_ri)
     out = torch.reshape(out,(-1,512,1)).to(DTYPE)
     out = torch.e**(1j * out)
