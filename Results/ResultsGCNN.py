@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 p = os.path.abspath('.')
 sys.path.insert(1, p)
 
-from acoustools.Solvers import wgs, gspat,naive_solver, naive_solver_batch, wgs_wrapper
+from acoustools.Solvers import wgs, gspat, naive
 from acoustools.Utilities import propagate, forward_model, device, create_points, add_lev_sig, propagate_abs, create_board, DTYPE, TRANSDUCERS
 from acoustools.Visualiser import Visualise, Visualise_single, get_point_pos
 from acoustools.Gorkov import gorkov_autograd
@@ -38,7 +38,7 @@ else:
 if "-l" in sys.argv:
 
     if "-overfit" not in sys.argv:
-        TRAINSIZE = 600000
+        TRAINSIZE = 100000
         TESTSIZE=1000
     else:
         TRAINSIZE = 4
@@ -101,17 +101,17 @@ if "-p" in sys.argv:
         
         pressure = torch.abs(propagate(out,p))
 
-        wgs_x = wgs_wrapper(p)
+        wgs_x = wgs(p)
         wgs_p = torch.abs(propagate(wgs_x, p))
       
         A = forward_model(p[0,:])
         backward = torch.conj(A).T
         R = A@backward
-        _,pres = gspat(R,A,backward,torch.ones(N,1).to(device)+0j, 200)
+        _,pres = gspat(R=R,A=A,B=backward,b=torch.ones(N,1).to(device)+0j, iterations=200, return_components=True)
 
         gs_pat_p = torch.abs(pres)
     
-        naive_p, naive_out = naive_solver_batch(p)
+        naive_out,naive_p = naive(p, return_components=True)
 
         press.append(pressure.cpu().detach().numpy())
         wgs_200_ps.append(wgs_p.squeeze_().cpu().detach().numpy())
@@ -130,7 +130,7 @@ if "-p" in sys.argv:
 
         axs[i].boxplot(to_plot.values())
         axs[i].set_xticklabels(to_plot.keys(), rotation=90)
-        axs[i].set_ylim(bottom=0,top=5500)
+        axs[i].set_ylim(bottom=0,top=6000)
         # axs[i].set_yticklabels(range(0,13000,2000), rotation=90)
         axs[i].set_ylabel("Pressure (Pa)")
 

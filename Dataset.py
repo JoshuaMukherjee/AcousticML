@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 from acoustools.Utilities import forward_model, transducers, device, generate_gorkov_targets, TRANSDUCERS, create_points
-from acoustools.Solvers import wgs, naive_solver, gradient_descent_solver
+from acoustools.Solvers import wgs, naive, gradient_descent_solver
 from acoustools.Optimise.Objectives import target_gorkov_mse_objective
 from acoustools.Optimise.Constraints import constrain_phase_only
 
@@ -141,7 +141,7 @@ class NaiveDataset(Dataset):
 
         for batch in range(self.length):
             points = torch.FloatTensor(3,self.N).uniform_(-.06,.06).to(device)
-            naive_p, naive_act = naive_solver(points)
+            naive_p, naive_act = naive(points)
             A=forward_model(points, transducers()).to(device)
             _, _, x = wgs(A,torch.ones(self.N,1).to(device)+0j,200)
             pressures = A@x[:,0]
@@ -183,7 +183,7 @@ class PressureTargetDataset(Dataset):
 
         for batch in range(self.length):
             points = torch.FloatTensor(3,self.N).uniform_(-.06,.06).to(device)
-            naive_p, naive_act = naive_solver(points)
+            naive_p, naive_act = naive(points)
             A=forward_model(points, transducers()).to(device)
             _, _, x = wgs(A,torch.ones(self.N,1).to(device)+0j,200)
             pressures = A@x[:,0]
@@ -371,8 +371,8 @@ if __name__ == "__main__":
 
     CREATE_DATASET = True
 
-    length = 131072
-    test_length = 1024
+    length = 200000
+    test_length = 0
     N = 4
     
     if CREATE_DATASET:

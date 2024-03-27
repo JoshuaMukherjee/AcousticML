@@ -1,5 +1,5 @@
 import torch
-from acoustools.Solvers import naive_solver
+from acoustools.Solvers import naive
 from acoustools.Utilities import device,DTYPE
 
 def do_NCNN(net, points):
@@ -13,7 +13,7 @@ def do_NCNN(net, points):
 
     naive_acts = []
     for ps in points:
-        _, naive_act = naive_solver(ps)
+        _, naive_act = naive(ps)
         naive_acts.append(naive_act)
     
     naive_act = torch.stack(naive_acts)
