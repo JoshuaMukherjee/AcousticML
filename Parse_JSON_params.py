@@ -13,7 +13,7 @@ import Network_Train_Functions
 
 
 files = [
-    "GCNN33", 'GCNN34','GCNN35'
+    "GCNN42","GCNN43"
 ]
 
 
