@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 p = os.path.abspath('.')
 sys.path.insert(1, p)
 
-from acoustools.Solvers import wgs, gspat,naive_solver, naive_solver_batch
+from acoustools.Solvers import wgs, gspat,naive
 from acoustools.Utilities import propagate, forward_model, device, create_points, add_lev_sig, propagate_abs, create_board
 from acoustools.Visualiser import Visualise, Visualise_single, get_point_pos
 from acoustools.Gorkov import gorkov_autograd
@@ -95,7 +95,7 @@ if "-p" in sys.argv:
     naive_ps = []
 
 
-    for p,a,pr,naive in data:
+    for p,a,pr,naive_holo in data:
 
 
         out = do_NCNN(model, p)
@@ -107,11 +107,11 @@ if "-p" in sys.argv:
         A = forward_model(p[0,:])
         backward = torch.conj(A).T
         R = A@backward
-        _,pres = gspat(R,A,backward,torch.ones(N,1).to(device)+0j, 200)
+        _,pres = gspat(R=R,A=A,B=backward,b=torch.ones(N,1).to(device)+0j, iterations=200,return_components=True)
 
         gs_pat_p = torch.abs(pres)
     
-        naive_p, naive_out = naive_solver_batch(p)
+        naive_out, naive_p = naive(p, return_components=True)
         print(torch.abs(naive_p))
        
 
@@ -133,7 +133,7 @@ if "-p" in sys.argv:
 
         axs[i].boxplot(to_plot.values())
         axs[i].set_xticklabels(to_plot.keys(), rotation=90)
-        axs[i].set_ylim(bottom=0,top=5000)
+        axs[i].set_ylim(bottom=0,top=5500)
         # axs[i].set_yticklabels(range(0,13000,2000), rotation=90)
         axs[i].set_ylabel("Pressure (Pa)")
 
@@ -182,7 +182,7 @@ if "-h" in sys.argv:
         for presWGS in torch.abs(pr).squeeze_():
             pressure_means_wgs.append(presWGS.cpu().detach().numpy())
 
-        naive_p,_ = naive_solver_batch(p)
+        naive_p,_ = naive(p)
         for presN in torch.abs(naive_p).squeeze_():
             pressure_means_naive.append(presN.cpu().detach().numpy())
 
@@ -220,7 +220,7 @@ if "-r" in sys.argv:
         
         pressure_std_wgs.append(torch.std(torch.abs(pr)).cpu().detach().numpy())
 
-        naive_p,_ = naive_solver_batch(p)
+        naive_p,_ = naive(p)
         
         pressure_std_naive.append(torch.std(torch.abs(naive_p)).cpu().detach().numpy())
 
@@ -385,7 +385,7 @@ if "-g" in sys.argv:
         act = act.T
         U_GSPAT = gorkov_autograd(add_lev_sig(act.unsqueeze_(2)),p)
     
-        naive_p, naive_out = naive_solver_batch(p)
+        naive_p, naive_out = naive(p)
         naive_out.unsqueeze_(2)
         U_naive = gorkov_autograd(add_lev_sig(naive_out),p)
        
