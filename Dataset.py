@@ -141,9 +141,9 @@ class NaiveDataset(Dataset):
 
         for batch in range(self.length):
             points = torch.FloatTensor(3,self.N).uniform_(-.06,.06).to(device)
-            naive_p, naive_act = naive(points)
+            naive_act,naive_p = naive(points, return_components=True)
             A=forward_model(points, transducers()).to(device)
-            _, _, x = wgs(A,torch.ones(self.N,1).to(device)+0j,200)
+            x = wgs(points=points,A=A,b=torch.ones(self.N,1).to(device)+0j,iter=200)
             pressures = A@x[:,0]
             activations = x[:,0]
 

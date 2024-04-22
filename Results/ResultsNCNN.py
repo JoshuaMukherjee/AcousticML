@@ -292,7 +292,7 @@ if "-v" in sys.argv:
 
     # print(trans_x)
     d = next(data)
-    for points,a,pr,naive in [d]:
+    for points,a,pr,naive_in in [d]:
         print(points)
         out = do_NCNN(model,points)
         activation = add_lev_sig(out)
@@ -318,7 +318,7 @@ if "-v" in sys.argv:
             point_pos = get_point_pos(A,B,C,point,res=res)
             point_poses.append(point_pos)
             results.append(result)
-            labels.append(str(round(point[0,0,0].item(),3)) + "," + str(round(point[0,1,0].item(),3)) + "," + str(round(point[0,2,0].item(),3)))
+            labels.append('('+str(round(point[0,0,0].item(),3)) + "," + str(round(point[0,1,0].item(),3)) + "," + str(round(point[0,2,0].item(),3))+')')
 
    
     axs = []

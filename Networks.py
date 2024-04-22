@@ -22,7 +22,6 @@ import Output_Funtions
 
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use("TkAgg")
 
 
 

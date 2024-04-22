@@ -7,7 +7,6 @@ import matplotlib
 import matplotlib.animation as animation
 
 
-matplotlib.use("TkAgg")
 
 
 p = os.path.abspath('.')
